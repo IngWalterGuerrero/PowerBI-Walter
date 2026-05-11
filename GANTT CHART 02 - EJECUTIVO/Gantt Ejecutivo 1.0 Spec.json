@@ -1,0 +1,4522 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v1.json",
+  "description": "Gantt Ejecutivo V1.",
+  "autosize": {
+    "type": "pad",
+    "contains": "padding",
+    "resize": true
+  },
+  "padding": {
+    "left": 5,
+    "right": 0,
+    "top": 5,
+    "bottom": 0
+  },
+  "signals": [
+    {
+      "name": "height",
+      "update": "data('yScale').length > 0 ? min(pbiContainerHeight-8, data('yScale').length * yRowHeight + 2) : 0"
+    },
+    {
+      "name": "width",
+      "update": "pbiContainerWidth"
+    },
+    {
+      "name": "showTooltips",
+      "value": true
+    },
+    {
+      "name": "initDate",
+      "value": "project",
+      "description": "The initial date shown in the Gantt. Can be either 'today' or 'project'"
+    },
+    {
+      "name": "showButtons",
+      "value": true
+    },
+    {
+      "name": "showDomainSpanLabel",
+      "value": false
+    },
+    {
+      "name": "startGrain",
+      "value": "All",
+      "description": "Vista inicial del Gantt. Inicia en Todo y el usuario puede cambiar a Días, Meses o Años."
+    },
+    {
+      "name": "initPhaseState",
+      "value": "openRows",
+      "description": "openRows or closeRows"
+    },
+    {
+      "name": "initColumnState",
+      "value": "openColumns",
+      "description": "openColumns or closeColumns"
+    },
+    {
+      "name": "textColour",
+      "value": "#5F6B7A"
+    },
+    {
+      "name": "colours",
+      "value": {
+        "dark": [
+          "#1F4E79",
+          "#2F6B7A",
+          "#5B5F97",
+          "#C77700",
+          "#A63A3A"
+        ],
+        "light": [
+          "#DCE8F3",
+          "#DDECEF",
+          "#E3E1F4",
+          "#F7E5C7",
+          "#F3D6D6"
+        ]
+      }
+    },
+    {
+      "name": "statusColumn",
+      "value": {
+        "domain": [
+          "Baja",
+          "Media",
+          "Alta",
+          "Muy Alta"
+        ],
+        "range": [
+          "Baja",
+          "Media",
+          "Alta",
+          "Muy Alta"
+        ],
+        "font": [
+          "#8A6A18",
+          "#A55A18",
+          "#A04A3A",
+          "#B23B45"
+        ],
+        "background": [
+          "#F8EDC6",
+          "#FFE3C0",
+          "#FFD9CC",
+          "#FFD3D8"
+        ]
+      }
+    },
+    {
+      "name": "yRowHeight",
+      "value": 32,
+      "description": "Height in pixels"
+    },
+    {
+      "name": "yRowPadding",
+      "value": 0.22,
+      "description": "Row padding as % of yRowHeight (each side)"
+    },
+    {
+      "name": "yPaddingInner",
+      "init": "yRowPadding * yRowHeight"
+    },
+    {
+      "name": "taskColumnWidth",
+      "init": "220+columnPadding"
+    },
+    {
+      "name": "startColumnWidth",
+      "init": "58+columnPadding"
+    },
+    {
+      "name": "endColumnWidth",
+      "init": "58+columnPadding"
+    },
+    {
+      "name": "daysColumnWidth",
+      "init": "45+columnPadding"
+    },
+    {
+      "name": "statusColumnWidth",
+      "init": "statusColumnPresent?84+columnPadding:0"
+    },
+    {
+      "name": "progressColumnWidth",
+      "init": "78+columnPadding"
+    },
+    {
+      "name": "columnPadding",
+      "value": 15
+    },
+    {
+      "name": "statusColumnPresent",
+      "init": "data('dataset')[0]['prioridad']!=null"
+    },
+    {
+      "name": "oneDay",
+      "init": "1000*60*60*24"
+    },
+    {
+      "name": "timeoffset",
+      "init": "timezoneoffset(data('dataset')[0]['inicio']) * 60 *1000"
+    },
+    {
+      "name": "dayBandwidth",
+      "update": "scale('x', timeOffset('day', datetime(2000,1,1),1)) - scale('x', datetime(2000,1,1))"
+    },
+    {
+      "name": "dayBandwidthRound",
+      "update": "(round(dayBandwidth *100)/100)"
+    },
+    {
+      "name": "minDayBandwidth",
+      "value": 20
+    },
+    {
+      "name": "minMonthBandwidth",
+      "value": 3
+    },
+    {
+      "name": "minYearBandwidth",
+      "value": 0.95
+    },
+    {
+      "name": "milestoneSymbolSize",
+      "value": 400
+    },
+    {
+      "name": "arrowSymbolSize",
+      "value": 70
+    },
+    {
+      "name": "phaseSymbolHeight",
+      "init": "bandwidth('y')-yPaddingInner-5"
+    },
+    {
+      "name": "phaseSymbolWidth",
+      "value": 10
+    },
+    {
+      "name": "columnsWidth",
+      "update": "!showColumns?taskColumnWidth:taskColumnWidth+startColumnWidth+endColumnWidth+daysColumnWidth+statusColumnWidth+progressColumnWidth+stateColumnWidth"
+    },
+    {
+      "name": "ganttWidth",
+      "update": "width-columnsWidth-minDayBandwidth"
+    },
+    {
+      "name": "dayExt",
+      "init": "initDate=='project'? [data('xExt')[0]['s']-oneDay,data('xExt')[0]['s']+ ((ganttWidth-minDayBandwidth)/minDayBandwidth)*oneDay]:[today-oneDay,today+ ((ganttWidth-minDayBandwidth)/minDayBandwidth)*oneDay]"
+    },
+    {
+      "name": "monthExt",
+      "init": "initDate=='project'? [data('xExt')[0]['s']-oneDay ,data('xExt')[0]['s'] + ganttWidth/2*oneDay]:[today-(oneDay*15) ,today + ganttWidth/2*oneDay]"
+    },
+    {
+      "name": "yearExt",
+      "init": "initDate=='project'? [data('xExt')[0]['s']-oneDay,data('xExt')[0]['s'] + ganttWidth/0.35*oneDay]:[today-(oneDay*180),today + ganttWidth/0.35*oneDay]"
+    },
+    {
+      "name": "allExt",
+      "init": "[data('xExt')[0]['s']-oneDay,data('xExt')[0]['e']+oneDay*9]"
+    },
+    {
+      "name": "xExt",
+      "update": "startGrain=='All'?allExt:startGrain=='Years'?yearExt:startGrain=='Months'?monthExt:dayExt"
+    },
+    {
+      "name": "today",
+      "init": "+datetime(year(now()),month(now()),date(now()))"
+    },
+    {
+      "name": "todayRule",
+      "init": "timeFormat(today,'%d/%m/%y')"
+    },
+    {
+      "name": "zoom",
+      "value": 1,
+      "on": [
+        {
+          "events": "wheel!",
+          "force": true,
+          "update": "x()>columnsWidth?pow(1.001, (event.deltaY) * pow(16, event.deltaMode)):1"
+        }
+      ]
+    },
+    {
+      "name": "xDomMinSpan",
+      "update": "span(dayExt)"
+    },
+    {
+      "name": "xDomMaxSpan",
+      "update": "round((ganttWidth/0.13)*oneDay)"
+    },
+    {
+      "name": "xDom",
+      "init": "xExt",
+      "on": [
+        {
+          "events": {
+            "signal": "xDomPre"
+          },
+          "update": "span(xDomPre)<xDomMinSpan?[anchor + (xDom[0] - anchor) * (zoom*(xDomMinSpan/span(xDomPre))), anchor + (xDom[1] - anchor) * (zoom*(xDomMinSpan/span(xDomPre)))]:span(xDomPre)>xDomMaxSpan?[anchor + (xDom[0] - anchor) * (zoom*(xDomMaxSpan/span(xDomPre))), anchor + (xDom[1] - anchor) * (zoom*(xDomMaxSpan/span(xDomPre)))] :xDomPre"
+        },
+        {
+          "events": {
+            "signal": "delta"
+          },
+          "update": "[xCur[0] + span(xCur) * delta[0] / width, xCur[1] + span(xCur) * delta[0] / width]"
+        },
+        {
+          "events": "dblclick",
+          "update": "xExt"
+        },
+        {
+          "events": "@buttonMarks:click",
+          "update": "datum.name=='All'?allExt:datum.name=='Years'?yearExt:datum.name=='Months'?monthExt:datum.name=='Days'?dayExt:xDom"
+        },
+        {
+          "events": {
+            "signal": "ganttWidth"
+          },
+          "update": "[xDom[0],xDom[0]+((ganttWidth/ganttWidthOld)*span(xDom))]"
+        }
+      ]
+    },
+    {
+      "name": "ganttWidthOld",
+      "init": "ganttWidth",
+      "on": [
+        {
+          "events": {
+            "signal": "showColumns"
+          },
+          "update": "ganttWidth==ganttWidthOld?ganttWidthOld:ganttWidth"
+        }
+      ]
+    },
+    {
+      "name": "scaledHeight",
+      "update": "data('yScale').length * yRowHeight"
+    },
+    {
+      "name": "contentHeight",
+      "update": "data('yScale').length * yRowHeight"
+    },
+    {
+      "name": "yRange",
+      "update": "[0, scaledHeight]",
+      "on": [
+        {
+          "events": [
+            {
+              "signal": "delta"
+            }
+          ],
+          "update": "clampRange( [yCur[0] + span(yCur) * delta[1] / max(1,scaledHeight), yCur[1] + span(yCur) * delta[1] / max(1,scaledHeight)],height>=scaledHeight?0: height-scaledHeight,height>=scaledHeight?height:scaledHeight)"
+        },
+        {
+          "events": "dblclick",
+          "update": "[0, scaledHeight]"
+        },
+        {
+          "events": {
+            "signal": "closeRowsAll"
+          },
+          "update": "closeRowsAll ? [0, scaledHeight] : yRange"
+        }
+      ]
+    },
+    {
+      "name": "xDomPre",
+      "value": [
+        0,
+        0
+      ],
+      "on": [
+        {
+          "events": {
+            "signal": "zoom"
+          },
+          "update": "[anchor + (xDom[0] - anchor) * zoom, anchor + (xDom[1] - anchor) * zoom]"
+        }
+      ]
+    },
+    {
+      "name": "anchor",
+      "value": 0,
+      "on": [
+        {
+          "events": "wheel",
+          "update": "+invert('x', x()-columnsWidth)"
+        }
+      ]
+    },
+    {
+      "name": "xCur",
+      "value": [
+        0,
+        0
+      ],
+      "on": [
+        {
+          "events": "pointerdown",
+          "update": "slice(xDom)"
+        }
+      ]
+    },
+    {
+      "name": "yCur",
+      "value": [
+        0,
+        0
+      ],
+      "on": [
+        {
+          "events": "pointerdown",
+          "update": "slice(yRange)"
+        }
+      ]
+    },
+    {
+      "name": "delta",
+      "value": [
+        0,
+        0
+      ],
+      "on": [
+        {
+          "events": [
+            {
+              "source": "window",
+              "type": "pointermove",
+              "consume": true,
+              "between": [
+                {
+                  "type": "pointerdown"
+                },
+                {
+                  "source": "window",
+                  "type": "pointerup"
+                }
+              ]
+            }
+          ],
+          "update": "down ? [down[0]-x(), y()-down[1]] : [0,0]"
+        }
+      ]
+    },
+    {
+      "name": "down",
+      "value": null,
+      "on": [
+        {
+          "events": "pointerdown",
+          "update": "xy()"
+        },
+        {
+          "events": "pointerup",
+          "update": "null"
+        }
+      ]
+    },
+    {
+      "name": "phaseClicked",
+      "value": null,
+      "on": [
+        {
+          "events": "@taskSelector:click,@phaseOutline:click",
+          "update": " yCur[0]==yRange[0] && yCur[1]==yRange[1]&& xCur[0]===xDom[0]&& xCur[1]===xDom[1] && datum.phase==datum.task?  {phase: datum.phase}:null",
+          "force": true
+        },
+        {
+          "events": "@taskTooltips:click",
+          "update": " yCur[0]==yRange[0] && yCur[1]==yRange[1]&& xCur[0]===xDom[0]&& xCur[1]===xDom[1] && datum.datum.phase==datum.datum.task?  {phase: datum.datum.phase}:null",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "itemHovered",
+      "value": {
+        "id": "",
+        "dependencies": []
+      },
+      "on": [
+        {
+          "events": "@taskSelector:mouseover,@phaseOutline:mouseover,@milestoneSymbols:mouseover,@taskBars:mouseover,@taskNames:mouseover,@taskLabels:mouseover,@taskTooltipHitArea:mouseover,@phaseTooltipHitArea:mouseover,@milestoneTooltipHitArea:mouseover",
+          "update": "{'id': datum.id, 'dependencies':split(datum.dependencies,',')}"
+        },
+        {
+          "events": "@taskTooltips:mouseover",
+          "update": "{'id': toString(datum.datum.id), 'dependencies':split(datum.datum.dependencies,',')}"
+        },
+        {
+          "events": "@taskSelector:mouseout,@phaseOutline:mouseout,@milestoneSymbols:mouseout,@taskBars:mouseout,@taskNames:mouseout,@taskLabels:mouseout,@taskTooltips:mouseout,@taskTooltipHitArea:mouseout,@phaseTooltipHitArea:mouseout,@milestoneTooltipHitArea:mouseout",
+          "update": "{'id': '', 'dependencies':[]}"
+        }
+      ]
+    },
+    {
+      "name": "hover",
+      "value": "",
+      "on": [
+        {
+          "events": "@buttonMarks:pointerover",
+          "update": "datum.name?datum.name:''",
+          "force": true
+        },
+        {
+          "events": "@buttonMarks:pointerout",
+          "update": "''",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "showColumns",
+      "update": "initColumnState=='openColumns'?true:false",
+      "on": [
+        {
+          "events": "@buttonMarks:click",
+          "update": "datum.name=='closeColumns'?false:datum.name=='openColumns'?true:showColumns",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "closeRowsAll",
+      "on": [
+        {
+          "events": "@buttonMarks:click",
+          "update": "datum.name=='closeRows'?true:false",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "openRowsAll",
+      "on": [
+        {
+          "events": "@buttonMarks:click",
+          "update": "datum.name=='openRows'?true:false",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "stateColumnPresent",
+      "init": "true"
+    },
+    {
+      "name": "stateColumnWidth",
+      "init": "stateColumnPresent?112+columnPadding:0"
+    },
+    {
+      "name": "plannedMarkerColor",
+      "value": "#98A2B3"
+    },
+    {
+      "name": "criticalTaskColor",
+      "value": "#D92D20"
+    },
+    {
+      "name": "nonCriticalTaskColor",
+      "value": "#2F74B5"
+    },
+    {
+      "name": "criticalTaskLight",
+      "value": "#FEE4E2"
+    },
+    {
+      "name": "nonCriticalTaskLight",
+      "value": "#DCEBFA"
+    },
+    {
+      "name": "groupStrokeColor",
+      "value": "#9EA7B3"
+    },
+    {
+      "name": "groupFillColor",
+      "value": "#F4F6F8"
+    },
+    {
+      "name": "projectFillColor",
+      "value": "#EEF1F4"
+    }
+  ],
+  "data": [
+    {
+      "name": "dataset"
+    },
+    {
+      "name": "input",
+      "source": "dataset",
+      "transform": [
+        {
+          "type": "formula",
+          "as": "id",
+          "expr": "toString(datum.id)"
+        },
+        {
+          "type": "formula",
+          "as": "phase",
+          "expr": "datum.fase"
+        },
+        {
+          "type": "formula",
+          "as": "task",
+          "expr": "datum.tarea"
+        },
+        {
+          "type": "formula",
+          "as": "project",
+          "expr": "isValid(datum.proyecto) && datum.proyecto!='' ? datum.proyecto : 'PROYECTO COMPLETO'"
+        },
+        {
+          "type": "formula",
+          "as": "milestone",
+          "expr": "datum.hito"
+        },
+        {
+          "type": "formula",
+          "as": "completion",
+          "expr": "datum.avance"
+        },
+        {
+          "type": "formula",
+          "as": "planned",
+          "expr": "isValid(datum.avance_planificado) ? max(0,min(100,datum.avance_planificado)) : null"
+        },
+        {
+          "type": "formula",
+          "as": "plannedLabel",
+          "expr": "isValid(datum.planned) ? format(datum.planned,'.0f') + '%' : 'N/D'"
+        },
+        {
+          "type": "formula",
+          "as": "deviation",
+          "expr": "isValid(datum.planned) ? datum.completion - datum.planned : null"
+        },
+        {
+          "type": "formula",
+          "as": "deviationLabel",
+          "expr": "isValid(datum.deviation) ? (datum.deviation>0 ? '+' + format(datum.deviation,'.0f') + ' pp' : format(datum.deviation,'.0f') + ' pp') : 'N/D'"
+        },
+        {
+          "type": "formula",
+          "as": "dependencies",
+          "expr": "isValid(datum.predecesoras)?replace(replace(toString(datum.predecesoras),', ',',') ,' ',''):''"
+        },
+        {
+          "type": "formula",
+          "as": "hyperlink",
+          "expr": "datum.enlace"
+        },
+        {
+          "type": "formula",
+          "as": "status",
+          "expr": "datum.prioridad"
+        },
+        {
+          "type": "formula",
+          "as": "assignee",
+          "expr": "datum.responsable"
+        },
+        {
+          "type": "formula",
+          "as": "state",
+          "expr": "isValid(datum.estado) && datum.estado!='' ? datum.estado : datum.avance>=100 ? 'Completado' : datum.avance==0 ? 'No iniciado' : 'En ejecución'"
+        },
+        {
+          "type": "formula",
+          "as": "stateType",
+          "expr": "indexof(lower(datum.state),'crít')>=0 || indexof(lower(datum.state),'critic')>=0 ? 'critical' : indexof(lower(datum.state),'retras')>=0 || indexof(lower(datum.state),'demor')>=0 ? 'delay' : indexof(lower(datum.state),'vigil')>=0 ? 'watch' : indexof(lower(datum.state),'ejec')>=0 || indexof(lower(datum.state),'plazo')>=0 ? 'progress' : indexof(lower(datum.state),'no iniciado')>=0 ? 'notstarted' : indexof(lower(datum.state),'complet')>=0 ? 'done' : 'normal'"
+        },
+        {
+          "type": "formula",
+          "as": "criticalFlag",
+          "expr": "datum.ruta_critica===true || datum.ruta_critica===1 || lower(toString(datum.ruta_critica))=='1' || lower(toString(datum.ruta_critica))=='true' || lower(toString(datum.ruta_critica))=='si' || lower(toString(datum.ruta_critica))=='sí' || lower(toString(datum.ruta_critica))=='yes' || lower(toString(datum.ruta_critica))=='y' ? 1 : 0"
+        },
+        {
+          "type": "formula",
+          "as": "isCritical",
+          "expr": "datum.criticalFlag==1"
+        },
+        {
+          "type": "formula",
+          "as": "start",
+          "expr": "+datetime(year(datum.inicio),month(datum.inicio),date(datum.inicio),hours(datum.inicio),minutes(datum.inicio))"
+        },
+        {
+          "type": "formula",
+          "as": "end",
+          "expr": "+datetime(year(datum.fin),month(datum.fin),date(datum.fin),hours(datum.fin),minutes(datum.fin))"
+        },
+        {
+          "type": "formula",
+          "as": "labelEnd",
+          "expr": "datum.fin"
+        },
+        {
+          "type": "formula",
+          "as": "end",
+          "expr": "datetime(+datum.end+oneDay)"
+        },
+        {
+          "type": "formula",
+          "as": "days",
+          "expr": "round(((datum.end-datum.start)/oneDay)*10)/10"
+        },
+        {
+          "type": "formula",
+          "as": "completionLabel",
+          "expr": "datum.completion+'%'"
+        },
+        {
+          "type": "window",
+          "sort": {
+            "field": "start",
+            "order": "ascending"
+          },
+          "ops": [
+            "rank"
+          ],
+          "as": [
+            "taskSort"
+          ],
+          "groupby": [
+            "phase"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "start",
+          "expr": "+datum.start"
+        },
+        {
+          "type": "formula",
+          "as": "end",
+          "expr": "+datum.end"
+        }
+      ]
+    },
+    {
+      "name": "projectSummary",
+      "source": "input",
+      "transform": [
+        {
+          "type": "aggregate",
+          "fields": [
+            "start",
+            "end",
+            "completion",
+            "task",
+            "labelEnd",
+            "criticalFlag",
+            "planned",
+            "deviation"
+          ],
+          "ops": [
+            "min",
+            "max",
+            "mean",
+            "count",
+            "max",
+            "max",
+            "mean",
+            "mean"
+          ],
+          "as": [
+            "start",
+            "end",
+            "completion",
+            "count",
+            "labelEnd",
+            "criticalFlag",
+            "planned",
+            "deviation"
+          ],
+          "groupby": [
+            "project"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "phase",
+          "expr": "datum.project"
+        },
+        {
+          "type": "formula",
+          "as": "task",
+          "expr": "datum.project"
+        },
+        {
+          "type": "formula",
+          "as": "id",
+          "expr": "'0^^^^^PROJECT'"
+        },
+        {
+          "type": "formula",
+          "as": "taskSort",
+          "expr": "-1"
+        },
+        {
+          "type": "formula",
+          "as": "phaseSort",
+          "expr": "0"
+        },
+        {
+          "type": "formula",
+          "as": "milestone",
+          "expr": "false"
+        },
+        {
+          "type": "formula",
+          "as": "dependencies",
+          "expr": "''"
+        },
+        {
+          "type": "formula",
+          "as": "status",
+          "expr": "''"
+        },
+        {
+          "type": "formula",
+          "as": "assignee",
+          "expr": "''"
+        },
+        {
+          "type": "formula",
+          "as": "completion",
+          "expr": "round(datum.completion)"
+        },
+        {
+          "type": "formula",
+          "as": "completionLabel",
+          "expr": "datum.completion+'%'"
+        },
+        {
+          "type": "formula",
+          "as": "days",
+          "expr": "round(((datum.end-datum.start)/oneDay)*10)/10"
+        },
+        {
+          "type": "formula",
+          "as": "isProject",
+          "expr": "true"
+        },
+        {
+          "type": "formula",
+          "as": "state",
+          "expr": "datum.completion>=100 ? 'Completado' : datum.completion==0 ? 'No iniciado' : 'En ejecución'"
+        },
+        {
+          "type": "formula",
+          "as": "stateType",
+          "expr": "indexof(lower(datum.state),'crít')>=0 || indexof(lower(datum.state),'critic')>=0 ? 'critical' : indexof(lower(datum.state),'retras')>=0 || indexof(lower(datum.state),'demor')>=0 ? 'delay' : indexof(lower(datum.state),'vigil')>=0 ? 'watch' : indexof(lower(datum.state),'ejec')>=0 || indexof(lower(datum.state),'plazo')>=0 ? 'progress' : indexof(lower(datum.state),'no iniciado')>=0 ? 'notstarted' : indexof(lower(datum.state),'complet')>=0 ? 'done' : 'normal'"
+        },
+        {
+          "type": "formula",
+          "as": "isCritical",
+          "expr": "datum.criticalFlag>=1"
+        },
+        {
+          "type": "formula",
+          "as": "planned",
+          "expr": "isValid(datum.planned) ? round(datum.planned) : null"
+        },
+        {
+          "type": "formula",
+          "as": "plannedLabel",
+          "expr": "isValid(datum.planned) ? format(datum.planned,'.0f') + '%' : 'N/D'"
+        },
+        {
+          "type": "formula",
+          "as": "deviation",
+          "expr": "isValid(datum.deviation) ? round(datum.deviation) : null"
+        },
+        {
+          "type": "formula",
+          "as": "deviationLabel",
+          "expr": "isValid(datum.deviation) ? (datum.deviation>0 ? '+' + format(datum.deviation,'.0f') + ' pp' : format(datum.deviation,'.0f') + ' pp') : 'N/D'"
+        }
+      ]
+    },
+    {
+      "name": "phases",
+      "source": "input",
+      "transform": [
+        {
+          "type": "aggregate",
+          "fields": [
+            "start",
+            "end",
+            "completion",
+            "task",
+            "completion",
+            "labelEnd",
+            "criticalFlag",
+            "planned",
+            "deviation"
+          ],
+          "ops": [
+            "min",
+            "max",
+            "sum",
+            "count",
+            "mean",
+            "max",
+            "max",
+            "mean",
+            "mean"
+          ],
+          "as": [
+            "start",
+            "end",
+            "sum",
+            "count",
+            "completion",
+            "labelEnd",
+            "criticalFlag",
+            "planned",
+            "deviation"
+          ],
+          "groupby": [
+            "phase"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "task",
+          "expr": "datum.phase"
+        },
+        {
+          "type": "formula",
+          "as": "taskSort",
+          "expr": "0"
+        },
+        {
+          "type": "formula",
+          "as": "completion",
+          "expr": "round(datum.completion)"
+        },
+        {
+          "type": "formula",
+          "as": "days",
+          "expr": "round(((datum.end-datum.start)/oneDay)*10)/10"
+        },
+        {
+          "type": "window",
+          "sort": {
+            "field": "start",
+            "order": "ascending"
+          },
+          "ops": [
+            "row_number",
+            "row_number"
+          ],
+          "as": [
+            "phaseSort",
+            "id"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "phaseSort",
+          "expr": "datum.phaseSort + 1"
+        },
+        {
+          "type": "formula",
+          "as": "id",
+          "expr": "length(data('input'))+datum.id+'^^^^^'"
+        },
+        {
+          "type": "formula",
+          "as": "state",
+          "expr": "datum.completion>=100 ? 'Completado' : datum.completion==0 ? 'No iniciado' : 'En ejecución'"
+        },
+        {
+          "type": "formula",
+          "as": "stateType",
+          "expr": "indexof(lower(datum.state),'crít')>=0 || indexof(lower(datum.state),'critic')>=0 ? 'critical' : indexof(lower(datum.state),'retras')>=0 || indexof(lower(datum.state),'demor')>=0 ? 'delay' : indexof(lower(datum.state),'vigil')>=0 ? 'watch' : indexof(lower(datum.state),'ejec')>=0 || indexof(lower(datum.state),'plazo')>=0 ? 'progress' : indexof(lower(datum.state),'no iniciado')>=0 ? 'notstarted' : indexof(lower(datum.state),'complet')>=0 ? 'done' : 'normal'"
+        },
+        {
+          "type": "formula",
+          "as": "isCritical",
+          "expr": "datum.criticalFlag>=1"
+        },
+        {
+          "type": "formula",
+          "as": "planned",
+          "expr": "isValid(datum.planned) ? round(datum.planned) : null"
+        },
+        {
+          "type": "formula",
+          "as": "plannedLabel",
+          "expr": "isValid(datum.planned) ? format(datum.planned,'.0f') + '%' : 'N/D'"
+        },
+        {
+          "type": "formula",
+          "as": "deviation",
+          "expr": "isValid(datum.deviation) ? round(datum.deviation) : null"
+        },
+        {
+          "type": "formula",
+          "as": "deviationLabel",
+          "expr": "isValid(datum.deviation) ? (datum.deviation>0 ? '+' + format(datum.deviation,'.0f') + ' pp' : format(datum.deviation,'.0f') + ' pp') : 'N/D'"
+        }
+      ]
+    },
+    {
+      "name": "summaryRows",
+      "source": [
+        "projectSummary",
+        "phases"
+      ],
+      "transform": [
+        {
+          "type": "formula",
+          "as": "isProject",
+          "expr": "isValid(datum.isProject)?datum.isProject:false"
+        }
+      ]
+    },
+    {
+      "name": "collapsedPhases",
+      "on": [
+        {
+          "trigger": "phaseClicked",
+          "toggle": "phaseClicked"
+        },
+        {
+          "trigger": "initPhaseState",
+          "insert": "initPhaseState=='closeRows'? data('phases'):null"
+        },
+        {
+          "trigger": "closeRowsAll",
+          "remove": true
+        },
+        {
+          "trigger": "closeRowsAll",
+          "insert": "data('phases')"
+        },
+        {
+          "trigger": "openRowsAll",
+          "remove": true
+        }
+      ]
+    },
+    {
+      "name": "phasePaths",
+      "source": "summaryRows",
+      "transform": [
+        {
+          "type": "formula",
+          "as": "phasePath",
+          "expr": "'M ' + scale('x', datum.start)+' '  + (scale('y', datum.id)+yPaddingInner) + ' H ' +  scale('x', datum.end)+' ' + ' v ' +  phaseSymbolHeight + ' L ' +  (scale('x', datum.end) - phaseSymbolWidth) +' ' + (scale('y', datum.id)+yPaddingInner+phaseSymbolHeight/2 ) + ' L ' + (scale('x', datum.start)+phaseSymbolWidth) + ' ' + (scale('y', datum.id)+yPaddingInner+phaseSymbolHeight/2) + ' L ' + (scale('x', datum.start)) + ' ' + (scale('y', datum.id)+ yPaddingInner+phaseSymbolHeight) + ' z'"
+        }
+      ]
+    },
+    {
+      "name": "tasks",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum.milestone != true"
+        },
+        {
+          "type": "filter",
+          "expr": "!indata('collapsedPhases', 'phase', datum.phase)"
+        }
+      ]
+    },
+    {
+      "name": "criticalTaskStats",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum.milestone != true && datum.isCritical == true"
+        },
+        {
+          "type": "aggregate",
+          "ops": [
+            "count"
+          ],
+          "as": [
+            "count"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nonCriticalTaskStats",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum.milestone != true && datum.isCritical != true"
+        },
+        {
+          "type": "aggregate",
+          "ops": [
+            "count"
+          ],
+          "as": [
+            "count"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "openCriticalStats",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum.milestone != true && datum.isCritical == true && datum.completion < 100"
+        },
+        {
+          "type": "aggregate",
+          "ops": [
+            "count"
+          ],
+          "as": [
+            "count"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "milestones",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum.milestone == true"
+        },
+        {
+          "type": "filter",
+          "expr": "!indata('collapsedPhases', 'phase', datum.phase)"
+        }
+      ]
+    },
+    {
+      "name": "yScale",
+      "source": [
+        "projectSummary",
+        "tasks",
+        "phases",
+        "milestones"
+      ],
+      "transform": [
+        {
+          "type": "lookup",
+          "from": "phases",
+          "key": "phase",
+          "values": [
+            "phaseSort"
+          ],
+          "fields": [
+            "phase"
+          ]
+        },
+        {
+          "type": "window",
+          "sort": {
+            "field": [
+              "phaseSort",
+              "taskSort"
+            ],
+            "order": [
+              "ascending",
+              "ascending"
+            ]
+          },
+          "ops": [
+            "row_number"
+          ],
+          "as": [
+            "finalSort"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "xExt",
+      "source": "input",
+      "transform": [
+        {
+          "type": "aggregate",
+          "fields": [
+            "start",
+            "end"
+          ],
+          "ops": [
+            "min",
+            "max"
+          ],
+          "as": [
+            "s",
+            "e"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "days",
+          "expr": "(datum.e-datum.s)/oneDay"
+        }
+      ]
+    },
+    {
+      "name": "weekends",
+      "transform": [
+        {
+          "type": "sequence",
+          "start": 0,
+          "stop": {
+            "signal": "dayBandwidthRound>=minMonthBandwidth? span(xDom)/oneDay:0"
+          },
+          "as": "sequence"
+        },
+        {
+          "type": "formula",
+          "as": "start",
+          "expr": "(+datetime(year(xDom[0]),month(xDom[0]),date(xDom[0]))-timeoffset)   +(oneDay*datum.sequence)"
+        },
+        {
+          "type": "filter",
+          "expr": "day(datum.start) == 6 || day(datum.start) == 0 "
+        },
+        {
+          "type": "formula",
+          "as": "end",
+          "expr": "datetime(+datum.start+(oneDay))"
+        }
+      ]
+    },
+    {
+      "name": "taskDependencyArrows",
+      "source": "yScale",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum.dependencies) && datum.dependencies!='' "
+        }
+      ]
+    },
+    {
+      "name": "phaseDependencyArrows",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "indata('collapsedPhases', 'phase', datum.phase) "
+        },
+        {
+          "type": "joinaggregate",
+          "fields": [
+            "id",
+            "start"
+          ],
+          "ops": [
+            "values",
+            "min"
+          ],
+          "as": [
+            "allPhaseIds",
+            "start"
+          ],
+          "groupby": [
+            "phase"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "id",
+          "expr": "toString(datum.id)"
+        },
+        {
+          "type": "formula",
+          "as": "allPhaseIds",
+          "expr": "pluck(datum.allPhaseIds, 'id')"
+        },
+        {
+          "type": "formula",
+          "as": "dependencies",
+          "expr": "split(datum.dependencies,',')"
+        },
+        {
+          "type": "flatten",
+          "fields": [
+            "dependencies"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "internalDependenciesIndex",
+          "expr": "indexof(datum.allPhaseIds,datum.dependencies)"
+        },
+        {
+          "type": "formula",
+          "as": "milestone",
+          "expr": "null"
+        },
+        {
+          "type": "filter",
+          "expr": "datum.dependencies!='null' && datum.dependencies!='' && datum.dependencies!='undefined' && datum.internalDependenciesIndex == -1 "
+        },
+        {
+          "type": "lookup",
+          "from": "phases",
+          "key": "phase",
+          "values": [
+            "id"
+          ],
+          "fields": [
+            "phase"
+          ],
+          "as": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dependencyArrows",
+      "source": [
+        "taskDependencyArrows",
+        "phaseDependencyArrows"
+      ]
+    },
+    {
+      "name": "dependencyLines",
+      "source": [
+        "yScale",
+        "phaseDependencyArrows"
+      ],
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum.dependencies) && datum.dependencies!='' "
+        },
+        {
+          "type": "formula",
+          "as": "dependencies",
+          "expr": "split(datum.dependencies,',')"
+        },
+        {
+          "type": "flatten",
+          "fields": [
+            "dependencies"
+          ]
+        },
+        {
+          "type": "lookup",
+          "from": "input",
+          "key": "id",
+          "values": [
+            "id",
+            "end",
+            "phase",
+            "milestone"
+          ],
+          "fields": [
+            "dependencies"
+          ],
+          "as": [
+            "sourceId",
+            "sourceEnd",
+            "sourcePhase",
+            "sourceMilestone"
+          ]
+        },
+        {
+          "type": "lookup",
+          "from": "phases",
+          "key": "phase",
+          "values": [
+            "id",
+            "end"
+          ],
+          "fields": [
+            "sourcePhase"
+          ],
+          "as": [
+            "sourcePhaseId",
+            "sourcePhaseEnd"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "sourceId",
+          "expr": "indata('collapsedPhases', 'phase', datum.sourcePhase) == true?datum.sourcePhaseId:datum.sourceId"
+        },
+        {
+          "type": "formula",
+          "as": "sourceEnd",
+          "expr": "indata('collapsedPhases', 'phase', datum.sourcePhase) == true?datum.sourcePhaseEnd:datum.sourceEnd"
+        },
+        {
+          "type": "formula",
+          "as": "plottedStart",
+          "expr": "datum.milestone == null || datum.milestone == false?scale('x',datum.start)- sqrt(arrowSymbolSize) - 1:(scale('x',datum.start) +(dayBandwidth/2) - (sqrt(milestoneSymbolSize)/2) - sqrt(arrowSymbolSize)) - 1"
+        },
+        {
+          "type": "formula",
+          "as": "plottedSourceEnd",
+          "expr": "scale('x',datum.sourceEnd) - (dayBandwidth/2) "
+        },
+        {
+          "type": "formula",
+          "as": "a",
+          "expr": "[datum.milestone == null || datum.milestone == false?scale('x',datum.start):scale('x',datum.start) +(dayBandwidth/2) - (sqrt(milestoneSymbolSize)/2)  ,scale('y', datum.id)+bandwidth('y')/2 ]"
+        },
+        {
+          "type": "formula",
+          "as": "b",
+          "expr": "[datum.plottedStart >= datum.plottedSourceEnd?datum.plottedSourceEnd :datum.plottedStart ,scale('y', datum.id)+bandwidth('y')/2]"
+        },
+        {
+          "type": "formula",
+          "as": "c",
+          "expr": "[datum.plottedSourceEnd,scale('y',datum.sourceId)+bandwidth('y')/2]"
+        },
+        {
+          "type": "formula",
+          "as": "d",
+          "expr": "[datum.plottedStart > datum.plottedSourceEnd?null:datum.plottedStart ,datum.plottedStart > datum.plottedSourceEnd?null:scale('y',datum.sourceId)+(bandwidth('y'))]"
+        },
+        {
+          "type": "formula",
+          "as": "e",
+          "expr": "[datum.plottedStart > datum.plottedSourceEnd?null:datum.plottedSourceEnd,datum.plottedStart > datum.plottedSourceEnd?null:scale('y',datum.sourceId)+(bandwidth('y'))]"
+        },
+        {
+          "type": "fold",
+          "fields": [
+            "a",
+            "b",
+            "d",
+            "e",
+            "c"
+          ]
+        },
+        {
+          "type": "filter",
+          "expr": "datum.value[0] != null"
+        },
+        {
+          "type": "formula",
+          "as": "value0",
+          "expr": "datum.value[0]"
+        },
+        {
+          "type": "formula",
+          "as": "value1",
+          "expr": "datum.value[1]"
+        },
+        {
+          "type": "window",
+          "ops": [
+            "row_number"
+          ],
+          "as": [
+            "duplicates"
+          ],
+          "groupby": [
+            "id",
+            "sourceId",
+            "value0",
+            "value1"
+          ]
+        },
+        {
+          "type": "filter",
+          "expr": "datum.duplicates == 1"
+        }
+      ]
+    },
+    {
+      "name": "buttons",
+      "values": [
+        {
+          "side": "left",
+          "text": "",
+          "name": "closeRows",
+          "x": 15,
+          "leftRadius": 4,
+          "icon": "m0 0-3.6294 3.6294q-.0706.0706-.1206.0806-.05.01-.14-.08t-.095-.13q-.005-.04.0966-.1416l3.5466-3.5466q.1518-.1518.3428-.1518.1908 0 .349.15l3.55 3.55q.07.08.075.12t-.085.13q-.09.09-.13.09t-.1306-.0906l-3.6294-3.6094z"
+        },
+        {
+          "side": "left",
+          "text": "",
+          "name": "openRows",
+          "x": 45,
+          "rightRadius": 4,
+          "icon": "m0 6 3.63-3.65q.07-.07.135-.07t.135.07q.09.09.09.135t-.09.135l-3.55 3.55q-.08.07-.165.115t-.185.045q-.1 0-.185-.045t-.155-.115l-3.55-3.55q-.08-.07-.065-.135t.085-.135q.09-.09.13-.09t.14.09l3.6 3.65zm0-5.51 3.63-3.65q.07-.07.135-.07t.135.07q.09.09.09.135t-.09.135l-3.55 3.55q-.08.07-.165.115t-.185.045q-.1 0-.185-.045t-.155-.115l-3.55-3.55q-.08-.07-.065-.135t.085-.135q.09-.09.13-.09t.14.09l3.6 3.65z"
+        },
+        {
+          "side": "left",
+          "text": "",
+          "name": "closeColumns",
+          "x": 105,
+          "leftRadius": 4,
+          "icon": "m-1 1 3.63 3.63q.07.07.08.12t-.08.14q-.09.09-.13.095t-.1368-.1018l-3.5432-3.5432q-.08-.078-.12-.159-.04-.081-.04-.185t.04-.185q.04-.081.12-.161l3.5432-3.5432q.0768-.0768.1268-.0818t.14.085q.09.09.09.13t-.09.13l-3.63 3.63z"
+        },
+        {
+          "side": "left",
+          "text": "",
+          "name": "openColumns",
+          "x": 135,
+          "rightRadius": 4,
+          "icon": "m0 1-3.65-3.63q-.08-.07-.075-.135t.075-.135q.09-.09.13-.09t.14.09l3.55 3.55q.07.08.115.165t.045.185q0 .1-.045.185t-.115.155l-3.55 3.55q-.08.08-.135.065t-.115-.085q-.1-.09-.1-.13t.1-.14l3.63-3.6zm4.91 0-3.65-3.63q-.08-.07-.075-.135t.075-.135q.09-.09.13-.09t.14.09l3.55 3.55q.07.08.115.165t.045.185q0 .1-.045.185t-.115.155l-3.55 3.55q-.08.08-.135.065t-.115-.085q-.1-.09-.1-.13t.1-.14l3.63-3.6z"
+        },
+        {
+          "side": "right",
+          "text": "Todo",
+          "name": "All",
+          "x": 50,
+          "rightRadius": 4
+        },
+        {
+          "side": "right",
+          "text": "Años",
+          "name": "Years",
+          "x": 100
+        },
+        {
+          "side": "right",
+          "text": "Meses",
+          "name": "Months",
+          "x": 150
+        },
+        {
+          "side": "right",
+          "text": "Días",
+          "name": "Days",
+          "x": 200,
+          "leftRadius": 4
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "tableHeaderBand",
+      "type": "rect",
+      "interactive": false,
+      "zindex": 0,
+      "data": [
+        {}
+      ],
+      "encode": {
+        "update": {
+          "x": {
+            "value": 0
+          },
+          "y": {
+            "value": -18
+          },
+          "width": {
+            "signal": "columnsWidth"
+          },
+          "height": {
+            "value": 18
+          },
+          "fill": {
+            "value": "#F8FAFC"
+          },
+          "stroke": {
+            "value": "#EAECF0"
+          },
+          "strokeWidth": {
+            "value": 0
+          },
+          "opacity": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "tableHeaderRule",
+      "type": "rule",
+      "interactive": false,
+      "zindex": 1,
+      "data": [
+        {}
+      ],
+      "encode": {
+        "update": {
+          "x": {
+            "value": 0
+          },
+          "x2": {
+            "signal": "columnsWidth"
+          },
+          "y": {
+            "value": 0
+          },
+          "stroke": {
+            "value": "#D0D5DD"
+          },
+          "strokeWidth": {
+            "value": 1
+          },
+          "opacity": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "ganttHeaderBand",
+      "type": "rect",
+      "interactive": false,
+      "zindex": 0,
+      "data": [
+        {}
+      ],
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth"
+          },
+          "y": {
+            "value": -18
+          },
+          "width": {
+            "signal": "ganttWidth"
+          },
+          "height": {
+            "value": 18
+          },
+          "fill": {
+            "value": "#F8FAFC"
+          },
+          "stroke": {
+            "value": "#EAECF0"
+          },
+          "strokeWidth": {
+            "value": 0
+          },
+          "opacity": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "ganttHeaderRule",
+      "type": "rule",
+      "interactive": false,
+      "zindex": 1,
+      "data": [
+        {}
+      ],
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth"
+          },
+          "x2": {
+            "signal": "columnsWidth+ganttWidth"
+          },
+          "y": {
+            "value": 0
+          },
+          "stroke": {
+            "value": "#D0D5DD"
+          },
+          "strokeWidth": {
+            "value": 1
+          },
+          "opacity": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "buttonMarks",
+      "description": "All buttons",
+      "type": "group",
+      "from": {
+        "data": "buttons"
+      },
+      "clip": {
+        "signal": "!showButtons"
+      },
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "datum.side=='left'?datum.x:columnsWidth+ganttWidth-datum.x"
+          },
+          "width": {
+            "signal": "datum.side=='left'?30:50"
+          },
+          "y": {
+            "value": -62
+          },
+          "height": {
+            "value": 22
+          },
+          "stroke": {
+            "value": "#C7D0D9"
+          },
+          "strokeWidth": {
+            "value": 1
+          },
+          "cornerRadiusTopLeft": {
+            "field": "leftRadius"
+          },
+          "cornerRadiusBottomLeft": {
+            "field": "leftRadius"
+          },
+          "cornerRadiusTopRight": {
+            "field": "rightRadius"
+          },
+          "cornerRadiusBottomRight": {
+            "field": "rightRadius"
+          },
+          "cursor": {
+            "value": "pointer"
+          },
+          "fill": [
+            {
+              "test": "indexof( hover,datum.name)>-1",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='closeRows' && data('collapsedPhases').length == data('phases').length",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='closeColumns' && !showColumns",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='openColumns' && showColumns",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='openRows' && data('collapsedPhases').length == 0",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='Days' && abs(span(xDom)-span(allExt)) >= 1 && dayBandwidthRound == minDayBandwidth",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='Months' && abs(span(xDom)-span(allExt)) >= 1 && dayBandwidthRound>=minYearBandwidth && dayBandwidthRound<minDayBandwidth",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='Years' && abs(span(xDom)-span(allExt)) >= 1 && dayBandwidthRound<minYearBandwidth",
+              "value": "#2F74B5"
+            },
+            {
+              "test": "datum.name=='All' && abs(span(xDom)-span(allExt)) < 1",
+              "value": "#2F74B5"
+            },
+            {
+              "value": "#FFFFFF"
+            }
+          ]
+        }
+      },
+      "marks": [
+        {
+          "name": "buttonText",
+          "interactive": false,
+          "type": "text",
+          "encode": {
+            "update": {
+              "text": {
+                "signal": "parent.text"
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "align": {
+                "value": "center"
+              },
+              "x": {
+                "signal": "item.mark.group.width/2"
+              },
+              "y": {
+                "signal": "11"
+              },
+              "fill": [
+                {
+                  "test": "indexof( hover,parent.name)>-1",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='closeRows' && data('collapsedPhases').length == data('phases').length",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='openRows' && data('collapsedPhases').length == 0",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='closeColumns' && !showColumns",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='openColumns' && showColumns",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='Days' && abs(span(xDom)-span(allExt)) >= 1 && dayBandwidthRound == minDayBandwidth",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='Months' && abs(span(xDom)-span(allExt)) >= 1 && dayBandwidthRound>=minYearBandwidth && dayBandwidthRound<minDayBandwidth",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='Years' && abs(span(xDom)-span(allExt)) >= 1 && dayBandwidthRound<minYearBandwidth",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='All' && abs(span(xDom)-span(allExt)) < 1",
+                  "value": "white"
+                },
+                {
+                  "value": "#666666"
+                }
+              ],
+              "font": {
+                "value": "Segoe UI"
+              },
+              "fontSize": {
+                "value": 10
+              },
+              "fontWeight": {
+                "value": "600"
+              }
+            }
+          }
+        },
+        {
+          "name": "buttonIcons",
+          "interactive": false,
+          "type": "path",
+          "encode": {
+            "update": {
+              "path": {
+                "signal": "parent.icon"
+              },
+              "x": {
+                "signal": "item.mark.group.width/2"
+              },
+              "y": {
+                "signal": "8"
+              },
+              "stroke": [
+                {
+                  "test": "indexof( hover,parent.name)>-1",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='closeColumns' && !showColumns",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='openColumns' && showColumns",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='closeRows' && data('collapsedPhases').length == data('phases').length",
+                  "value": "white"
+                },
+                {
+                  "test": "parent.name=='openRows' && data('collapsedPhases').length == 0",
+                  "value": "white"
+                },
+                {
+                  "value": "#7f7f7f"
+                }
+              ],
+              "strokeWidth": {
+                "value": 1.2
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "xDomainText",
+      "data": [
+        {}
+      ],
+      "interactive": false,
+      "type": "text",
+      "encode": {
+        "update": {
+          "text": {
+            "signal": "showDomainSpanLabel?timeFormat(xDom[0],'%d/%m/%y') +' - ' + timeFormat(xDom[1],'%d/%m/%y'):null"
+          },
+          "baseline": {
+            "value": "bottom"
+          },
+          "align": {
+            "value": "right"
+          },
+          "x": {
+            "signal": "columnsWidth+ganttWidth-220"
+          },
+          "y": {
+            "signal": "-45"
+          },
+          "fill": {
+            "signal": "textColour"
+          }
+        }
+      }
+    },
+    {
+      "name": "phaseBackgrounds",
+      "description": "Background rect for phases",
+      "type": "rect",
+      "clip": true,
+      "zindex": 0,
+      "from": {
+        "data": "summaryRows"
+      },
+      "encode": {
+        "update": {
+          "x": {
+            "value": 0
+          },
+          "x2": {
+            "signal": "columnsWidth"
+          },
+          "y": {
+            "signal": "scale('y', datum.id)"
+          },
+          "height": {
+            "signal": "bandwidth('y')"
+          },
+          "fill": {
+            "signal": "datum.id == itemHovered.id ? '#F8FAFC' : (datum.isProject ? '#F8FAFC' : '#FFFFFF')"
+          },
+          "opacity": {
+            "value": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "taskLabelSizes",
+      "description": "Hidden label sizes to support tooltips when the task name doesn't completely fit",
+      "type": "text",
+      "clip": true,
+      "from": {
+        "data": "yScale"
+      },
+      "encode": {
+        "enter": {
+          "x": {
+            "value": -100
+          },
+          "y": {
+            "value": -100
+          },
+          "fill": {
+            "value": "transparent"
+          },
+          "fontSize": {
+            "value": 11
+          },
+          "text": {
+            "signal": "datum.phase == datum.task?upper(datum.task):datum.task"
+          },
+          "font": {
+            "signal": "datum.phase == datum.task?'Arial':'Segoe UI'"
+          },
+          "fontWeight": {
+            "signal": "datum.phase == datum.task?'bold':'normal'"
+          }
+        }
+      }
+    },
+    {
+      "type": "rect",
+      "name": "taskTooltips",
+      "description": "Hidden rect to support tooltips when the task name doesn't completely fit",
+      "from": {
+        "data": "taskLabelSizes"
+      },
+      "clip": true,
+      "zindex": 101,
+      "encode": {
+        "update": {
+          "x": {
+            "value": -15
+          },
+          "x2": {
+            "signal": "taskColumnWidth"
+          },
+          "y": {
+            "signal": "scale('y', datum.datum.id)"
+          },
+          "height": {
+            "signal": "bandwidth('y')"
+          },
+          "fill": {
+            "value": "transparent"
+          },
+          "tooltip": {
+            "signal": "datum.bounds.x2 - datum.bounds.x1>=taskColumnWidth-columnPadding-16? datum.datum.task:null"
+          },
+          "cursor": {
+            "signal": "datum.datum.phase == datum.datum.task?'pointer':'auto'"
+          },
+          "href": {
+            "field": "datum.hyperlink"
+          }
+        }
+      }
+    },
+    {
+      "type": "group",
+      "name": "columnHolder",
+      "style": "cell",
+      "layout": {
+        "bounds": "flush",
+        "align": "each"
+      },
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "0"
+          },
+          "stroke": {
+            "value": "transparent"
+          },
+          "width": {
+            "signal": "columnsWidth"
+          },
+          "height": {
+            "signal": "height"
+          }
+        }
+      },
+      "marks": [
+        {
+          "name": "tableRowSeparators",
+          "type": "rule",
+          "interactive": false,
+          "from": {
+            "data": "yScale"
+          },
+          "zindex": 2,
+          "encode": {
+            "update": {
+              "x": {
+                "value": 0
+              },
+              "x2": {
+                "signal": "columnsWidth"
+              },
+              "y": {
+                "signal": "scale('y', datum.id)+bandwidth('y')"
+              },
+              "stroke": {
+                "value": "#E9EDF2"
+              },
+              "strokeWidth": {
+                "value": 1
+              },
+              "opacity": {
+                "signal": "datum.finalSort < data('yScale').length ? 1 : 0"
+              }
+            }
+          }
+        },
+        {
+          "name": "tableRowHoverHighlight",
+          "type": "rect",
+          "interactive": false,
+          "from": {
+            "data": "yScale"
+          },
+          "zindex": 0,
+          "encode": {
+            "update": {
+              "x": {
+                "value": 0
+              },
+              "x2": {
+                "signal": "columnsWidth"
+              },
+              "y": {
+                "signal": "scale('y', datum.id)"
+              },
+              "height": {
+                "signal": "bandwidth('y')"
+              },
+              "fill": {
+                "value": "#DCEBFF"
+              },
+              "opacity": {
+                "signal": "datum.id == itemHovered.id ? 0.70 : 0"
+              }
+            }
+          }
+        },
+        {
+          "type": "group",
+          "name": "taskColumnWidth",
+          "title": {
+            "text": "Tarea",
+            "anchor": "start",
+            "frame": "group",
+            "align": "left",
+            "dx": 16,
+            "color": "#344054",
+            "font": "Segoe UI",
+            "fontSize": 10,
+            "fontWeight": "700"
+          },
+          "encode": {
+            "enter": {
+              "stroke": {
+                "value": ""
+              },
+              "width": {
+                "signal": "taskColumnWidth"
+              },
+              "height": {
+                "signal": "height"
+              }
+            }
+          },
+          "marks": [
+            {
+              "type": "text",
+              "style": "col",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "align": {
+                    "value": "left"
+                  },
+                  "dx": {
+                    "value": 16
+                  },
+                  "y": {
+                    "signal": "scale('y', datum.id)+bandwidth('y')/2"
+                  },
+                  "text": {
+                    "signal": "datum.phase == datum.task?upper(datum.task):datum.task"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fontWeight": {
+                    "signal": "datum.isProject ? '700' : datum.phase == datum.task ? '600' : '400'"
+                  },
+                  "limit": {
+                    "signal": "taskColumnWidth-16-columnPadding"
+                  },
+                  "fill": {
+                    "signal": "datum.isProject ? '#1F4E79' : datum.phase == datum.task ? '#344054' : (datum.id == itemHovered.id ? '#1D2939' : '#475467')"
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            },
+            {
+              "type": "symbol",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "fill": {
+                    "signal": "datum.phase == datum.task && !datum.isProject ? '#7B8794' : 'transparent'"
+                  },
+                  "x": {
+                    "signal": "sqrt(90)/2"
+                  },
+                  "size": {
+                    "value": 90
+                  },
+                  "yc": {
+                    "signal": "(scale('y', datum.id)+bandwidth('y')/2)-1"
+                  },
+                  "shape": {
+                    "signal": "datum.isProject ? '' : datum.phase == datum.task && !indata('collapsedPhases', 'phase', datum.phase)?'triangle-down':datum.phase == datum.task && indata('collapsedPhases', 'phase', datum.phase)?'triangle-right':''"
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "name": "startColumnWidth",
+          "clip": {
+            "signal": "!showColumns"
+          },
+          "title": {
+            "text": {
+              "signal": "'Inicio'"
+            },
+            "anchor": "middle",
+            "dx": {
+              "signal": "-(columnPadding/2)"
+            },
+            "frame": "group",
+            "align": "center",
+            "color": "#344054",
+            "font": "Segoe UI",
+            "fontSize": 10,
+            "fontWeight": "700"
+          },
+          "encode": {
+            "update": {
+              "width": {
+                "signal": "startColumnWidth"
+              },
+              "height": {
+                "signal": "height"
+              },
+              "stroke": {
+                "value": ""
+              }
+            }
+          },
+          "marks": [
+            {
+              "type": "text",
+              "style": "col",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "align": {
+                    "value": "center"
+                  },
+                  "x": {
+                    "signal": "(startColumnWidth-columnPadding)/2"
+                  },
+                  "y": {
+                    "signal": "scale('y', datum.id)+bandwidth('y')/2"
+                  },
+                  "text": {
+                    "signal": "timeFormat(datum.start,' %d/%m/%y')"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fontWeight": {
+                    "signal": "datum.isProject ? '700' : datum.phase == datum.task ? '600' : '400'"
+                  },
+                  "fill": {
+                    "signal": "datum.isProject ? '#1F4E79' : datum.phase == datum.task ? '#344054' : (datum.id == itemHovered.id ? '#1D2939' : '#475467')"
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "name": "endColumnWidth",
+          "clip": {
+            "signal": "!showColumns"
+          },
+          "title": {
+            "text": {
+              "signal": "'Fin'"
+            },
+            "anchor": "middle",
+            "dx": {
+              "signal": "-(columnPadding/2)"
+            },
+            "frame": "group",
+            "align": "center",
+            "color": "#344054",
+            "font": "Segoe UI",
+            "fontSize": 10,
+            "fontWeight": "700"
+          },
+          "encode": {
+            "update": {
+              "width": {
+                "signal": "endColumnWidth"
+              },
+              "stroke": {
+                "value": "transparent"
+              },
+              "height": {
+                "signal": "height"
+              }
+            }
+          },
+          "marks": [
+            {
+              "type": "text",
+              "style": "col",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "align": {
+                    "value": "center"
+                  },
+                  "x": {
+                    "signal": "(startColumnWidth-columnPadding)/2"
+                  },
+                  "y": {
+                    "signal": "scale('y', datum.id)+bandwidth('y')/2"
+                  },
+                  "text": {
+                    "signal": "timeFormat(datum.labelEnd,' %d/%m/%y')"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fontWeight": {
+                    "signal": "datum.isProject ? '700' : datum.phase == datum.task ? '600' : '400'"
+                  },
+                  "fill": {
+                    "signal": "datum.isProject ? '#1F4E79' : datum.phase == datum.task ? '#344054' : (datum.id == itemHovered.id ? '#1D2939' : '#475467')"
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "name": "daysColumnWidth",
+          "clip": {
+            "signal": "!showColumns"
+          },
+          "title": {
+            "text": {
+              "signal": "'Días'"
+            },
+            "anchor": "end",
+            "dx": {
+              "signal": "-columnPadding"
+            },
+            "frame": "group",
+            "align": "right",
+            "color": "#344054",
+            "font": "Segoe UI",
+            "fontSize": 10,
+            "fontWeight": "700"
+          },
+          "encode": {
+            "update": {
+              "width": {
+                "signal": "daysColumnWidth"
+              },
+              "stroke": {
+                "value": "transparent"
+              },
+              "height": {
+                "signal": "height"
+              }
+            }
+          },
+          "marks": [
+            {
+              "type": "text",
+              "style": "col",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "align": {
+                    "value": "right"
+                  },
+                  "x": {
+                    "signal": "daysColumnWidth-columnPadding"
+                  },
+                  "y": {
+                    "signal": "scale('y', datum.id)+bandwidth('y')/2"
+                  },
+                  "text": {
+                    "signal": "format(datum.days,',')+' d'"
+                  },
+                  "fontWeight": {
+                    "signal": "datum.isProject ? '700' : datum.phase == datum.task ? '600' : '400'"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fill": {
+                    "signal": "datum.isProject ? '#1F4E79' : datum.phase == datum.task ? '#344054' : (datum.id == itemHovered.id ? '#1D2939' : '#475467')"
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "name": "statusColumn",
+          "clip": {
+            "signal": "!showColumns"
+          },
+          "title": {
+            "text": {
+              "signal": "statusColumnPresent?'Prioridad':''"
+            },
+            "anchor": "start",
+            "frame": "group",
+            "align": "left",
+            "color": "#344054",
+            "font": "Segoe UI",
+            "fontSize": 10,
+            "fontWeight": "700"
+          },
+          "encode": {
+            "update": {
+              "width": {
+                "signal": "statusColumnWidth"
+              },
+              "stroke": {
+                "value": "transparent"
+              },
+              "height": {
+                "signal": "height"
+              }
+            }
+          },
+          "marks": [
+            {
+              "name": "priorityBadge",
+              "type": "rect",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "((statusColumnWidth-columnPadding)-72)/2"
+                  },
+                  "y": {
+                    "signal": "scale('y',datum.id) + max(3, yPaddingInner-1)"
+                  },
+                  "width": {
+                    "signal": "isValid(datum.status) && datum.status!='' ? 72 : 0"
+                  },
+                  "height": {
+                    "signal": "bandwidth('y') - max(6, yPaddingInner*2)"
+                  },
+                  "cornerRadius": {
+                    "value": 999
+                  },
+                  "fill": {
+                    "signal": "isValid(datum.status) && datum.status!='' ? scale('statusBackground',datum.status) : 'transparent'"
+                  },
+                  "stroke": {
+                    "signal": "isValid(datum.status) && datum.status!='' ? '#FFFFFF' : 'transparent'"
+                  },
+                  "strokeWidth": {
+                    "value": 0.8
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            },
+            {
+              "name": "priorityText",
+              "type": "text",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "((statusColumnWidth-columnPadding)-72)/2 + 36"
+                  },
+                  "y": {
+                    "signal": "scale('y',datum.id) + bandwidth('y')/2 + 0.5"
+                  },
+                  "align": {
+                    "value": "center"
+                  },
+                  "baseline": {
+                    "value": "middle"
+                  },
+                  "text": {
+                    "signal": "isValid(datum.status) && datum.status!='' ? datum.status : ''"
+                  },
+                  "fill": {
+                    "signal": "isValid(datum.status) && datum.status!='' ? scale('statusFont',datum.status) : '#667085'"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fontWeight": {
+                    "value": "700"
+                  },
+                  "fontSize": {
+                    "signal": "datum.status=='Muy Alta' ? 8.2 : 8.6"
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "name": "completionColumn",
+          "clip": {
+            "signal": "!showColumns"
+          },
+          "title": {
+            "text": {
+              "signal": "'Avance'"
+            },
+            "anchor": "start",
+            "frame": "group",
+            "align": "left",
+            "color": "#344054",
+            "font": "Segoe UI",
+            "fontSize": 10,
+            "fontWeight": "700"
+          },
+          "encode": {
+            "update": {
+              "width": {
+                "signal": "progressColumnWidth"
+              },
+              "stroke": {
+                "value": "transparent"
+              },
+              "height": {
+                "signal": "height"
+              }
+            }
+          },
+          "marks": [
+            {
+              "type": "rect",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "1"
+                  },
+                  "width": {
+                    "signal": "item.mark.group.width-2-columnPadding"
+                  },
+                  "stroke": {
+                    "value": "#B7D7A8"
+                  },
+                  "yc": {
+                    "signal": "(scale('y',datum.id)+bandwidth('y')/2)"
+                  },
+                  "fill": {
+                    "value": "#FFFFFF"
+                  },
+                  "height": {
+                    "signal": "bandwidth('y')-yPaddingInner*2"
+                  },
+                  "strokeWidth": {
+                    "signal": "datum.id == itemHovered.id?1.4:1"
+                  },
+                  "cornerRadius": {
+                    "value": 3
+                  },
+                  "tooltip": {
+                    "signal": "{'Avance real':datum.completionLabel,'Avance planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Lectura':'La línea punteada indica el avance planificado al corte.'}"
+                  }
+                }
+              }
+            },
+            {
+              "type": "rect",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "1"
+                  },
+                  "width": {
+                    "signal": "((item.mark.group.width-columnPadding)/100)*datum.completion"
+                  },
+                  "fill": {
+                    "value": "#BEE3A8"
+                  },
+                  "yc": {
+                    "signal": "(scale('y',datum.id)+bandwidth('y')/2)"
+                  },
+                  "strokeWidth": {
+                    "value": 1
+                  },
+                  "height": {
+                    "signal": "bandwidth('y')-yPaddingInner*2"
+                  },
+                  "cornerRadius": {
+                    "value": 3
+                  },
+                  "tooltip": {
+                    "signal": "{'Avance real':datum.completionLabel,'Avance planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Lectura':'La línea punteada indica el avance planificado al corte.'}"
+                  }
+                }
+              }
+            },
+            {
+              "name": "plannedProgressMarker",
+              "type": "rule",
+              "clip": true,
+              "interactive": false,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "opacity": {
+                    "signal": "isValid(datum.planned) ? 1 : 0"
+                  },
+                  "x": {
+                    "signal": "1 + ((item.mark.group.width-columnPadding)/100)*datum.planned"
+                  },
+                  "y": {
+                    "signal": "scale('y',datum.id) + max(3, yPaddingInner-1)"
+                  },
+                  "y2": {
+                    "signal": "scale('y',datum.id) + bandwidth('y') - max(3, yPaddingInner-1)"
+                  },
+                  "stroke": {
+                    "signal": "plannedMarkerColor"
+                  },
+                  "strokeWidth": {
+                    "value": 1.35
+                  },
+                  "strokeDash": {
+                    "value": [
+                      2,
+                      2
+                    ]
+                  },
+                  "strokeCap": {
+                    "value": "round"
+                  },
+                  "tooltip": {
+                    "signal": "{'Referencia':'Avance planificado','Plan':datum.plannedLabel,'Real':datum.completionLabel,'Desviación':datum.deviationLabel}"
+                  }
+                }
+              }
+            },
+            {
+              "name": "plannedProgressMarkerDot",
+              "type": "symbol",
+              "clip": true,
+              "interactive": false,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "opacity": {
+                    "signal": "isValid(datum.planned) ? 1 : 0"
+                  },
+                  "x": {
+                    "signal": "1 + ((item.mark.group.width-columnPadding)/100)*datum.planned"
+                  },
+                  "yc": {
+                    "signal": "scale('y',datum.id) + max(3, yPaddingInner-1)"
+                  },
+                  "shape": {
+                    "value": "triangle-down"
+                  },
+                  "size": {
+                    "value": 32
+                  },
+                  "fill": {
+                    "signal": "plannedMarkerColor"
+                  },
+                  "stroke": {
+                    "value": "#FFFFFF"
+                  },
+                  "strokeWidth": {
+                    "value": 0.7
+                  },
+                  "tooltip": {
+                    "signal": "{'Referencia':'Avance planificado','Plan':datum.plannedLabel,'Real':datum.completionLabel,'Desviación':datum.deviationLabel}"
+                  }
+                }
+              }
+            },
+            {
+              "name": "plannedProgressTooltip",
+              "type": "rect",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "opacity": {
+                    "value": 0
+                  },
+                  "x": {
+                    "signal": "1 + ((item.mark.group.width-columnPadding)/100)*datum.planned - 5"
+                  },
+                  "y": {
+                    "signal": "scale('y',datum.id) + max(3, yPaddingInner-1)"
+                  },
+                  "width": {
+                    "value": 10
+                  },
+                  "height": {
+                    "signal": "bandwidth('y') - max(6, yPaddingInner*2)"
+                  },
+                  "tooltip": {
+                    "signal": "{'Referencia':'Avance planificado','Plan':datum.plannedLabel,'Real':datum.completionLabel,'Desviación':datum.deviationLabel}"
+                  }
+                }
+              }
+            },
+            {
+              "type": "text",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "align": {
+                    "value": "left"
+                  },
+                  "dx": {
+                    "value": 4
+                  },
+                  "fill": {
+                    "signal": "datum.isProject ? '#1F4E79' : datum.phase == datum.task ? '#344054' : (datum.id == itemHovered.id ? '#1D2939' : '#475467')"
+                  },
+                  "y": {
+                    "signal": "scale('y',datum.id)+bandwidth('y')/2"
+                  },
+                  "text": {
+                    "signal": "datum.completion+'%'"
+                  },
+                  "fontWeight": {
+                    "signal": "datum.isProject ? '700' : datum.phase == datum.task ? '600' : '400'"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fontSize": {
+                    "value": 9.5
+                  },
+                  "tooltip": {
+                    "signal": "{'Avance real':datum.completionLabel,'Avance planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Lectura':'La línea punteada indica el avance planificado al corte.'}"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "name": "stateColumn",
+          "clip": {
+            "signal": "!showColumns"
+          },
+          "title": {
+            "text": {
+              "signal": "stateColumnPresent?'Estado':''"
+            },
+            "anchor": "middle",
+            "frame": "group",
+            "align": "center",
+            "color": "#344054",
+            "font": "Segoe UI",
+            "fontSize": 10,
+            "fontWeight": "700"
+          },
+          "encode": {
+            "update": {
+              "width": {
+                "signal": "stateColumnWidth"
+              },
+              "stroke": {
+                "value": "transparent"
+              },
+              "height": {
+                "signal": "height"
+              }
+            }
+          },
+          "marks": [
+            {
+              "name": "stateBadge",
+              "type": "rect",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "((stateColumnWidth-columnPadding)-94)/2"
+                  },
+                  "y": {
+                    "signal": "scale('y',datum.id) + max(3, yPaddingInner-1)"
+                  },
+                  "width": {
+                    "signal": "isValid(datum.state) && datum.state!='' ? 94 : 0"
+                  },
+                  "height": {
+                    "signal": "bandwidth('y') - max(6, yPaddingInner*2)"
+                  },
+                  "cornerRadius": {
+                    "value": 999
+                  },
+                  "fill": {
+                    "signal": "isValid(datum.state) && datum.state!='' ? scale('stateFill',datum.state) : 'transparent'"
+                  },
+                  "stroke": {
+                    "signal": "isValid(datum.state) && datum.state!='' ? scale('stateStroke',datum.state) : 'transparent'"
+                  },
+                  "strokeWidth": {
+                    "value": 0.7
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            },
+            {
+              "name": "stateText",
+              "type": "text",
+              "clip": true,
+              "from": {
+                "data": "yScale"
+              },
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "((stateColumnWidth-columnPadding)-94)/2 + 47"
+                  },
+                  "y": {
+                    "signal": "scale('y',datum.id) + bandwidth('y')/2 + 0.5"
+                  },
+                  "align": {
+                    "value": "center"
+                  },
+                  "baseline": {
+                    "value": "middle"
+                  },
+                  "text": {
+                    "signal": "isValid(datum.state) && datum.state!='' ? datum.state : ''"
+                  },
+                  "limit": {
+                    "signal": "stateColumnWidth-columnPadding-14"
+                  },
+                  "ellipsis": {
+                    "value": "…"
+                  },
+                  "fill": {
+                    "signal": "isValid(datum.state) && datum.state!='' ? scale('stateTextScale',datum.state) : '#667085'"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fontWeight": {
+                    "value": "700"
+                  },
+                  "fontSize": {
+                    "signal": "datum.state=='En vigilancia' || datum.state=='En ejecución' || datum.state=='En progreso' ? 8.0 : 8.4"
+                  },
+                  "tooltip": {
+                    "signal": "showTooltips && down==null ? {'Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "name": "weekendContainer",
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth"
+          },
+          "y": {
+            "signal": "-15"
+          },
+          "clip": {
+            "signal": "true"
+          },
+          "height": {
+            "signal": "height+15"
+          },
+          "width": {
+            "signal": "ganttWidth"
+          },
+          "fill": {
+            "value": "transparent"
+          }
+        }
+      },
+      "marks": [
+        {
+          "type": "rect",
+          "description": "Weekend shading",
+          "name": "weekendShading",
+          "from": {
+            "data": "weekends"
+          },
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "scale('x',datum.start)"
+              },
+              "x2": {
+                "signal": "scale('x',datum.end)"
+              },
+              "y": {
+                "signal": "dayBandwidthRound>=minDayBandwidth?0:15"
+              },
+              "y2": {
+                "signal": "scaledHeight<height?yRange[1]+15:height+15"
+              },
+              "strokeWidth": {
+                "signal": "1"
+              },
+              "stroke": {
+                "value": "#F4F5F7"
+              },
+              "fill": {
+                "value": "#F7F8FA"
+              }
+            }
+          }
+        },
+        {
+          "name": "todayHighlight",
+          "description": "Today highlight",
+          "type": "rect",
+          "data": [
+            {}
+          ],
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "scale('x',today) "
+              },
+              "width": {
+                "signal": "dayBandwidth"
+              },
+              "y": {
+                "value": 0
+              },
+              "height": {
+                "signal": "15"
+              },
+              "fill": {
+                "value": "#E9F1FA"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "name": "ganttContainer",
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth"
+          },
+          "y": {
+            "signal": "0"
+          },
+          "clip": {
+            "signal": "true"
+          },
+          "height": {
+            "signal": "height"
+          },
+          "width": {
+            "signal": "ganttWidth"
+          },
+          "fill": {
+            "value": "transparent"
+          }
+        }
+      },
+      "marks": [
+        {
+          "name": "ganttRowSeparators",
+          "type": "rule",
+          "interactive": false,
+          "from": {
+            "data": "yScale"
+          },
+          "zindex": 1,
+          "encode": {
+            "update": {
+              "x": {
+                "value": 0
+              },
+              "x2": {
+                "signal": "ganttWidth"
+              },
+              "y": {
+                "signal": "scale('y', datum.id)+bandwidth('y')"
+              },
+              "stroke": {
+                "value": "#F1F3F5"
+              },
+              "strokeWidth": {
+                "value": 1
+              },
+              "opacity": {
+                "signal": "datum.finalSort < data('yScale').length ? 1 : 0"
+              }
+            }
+          }
+        },
+        {
+          "name": "ganttRowHoverHighlight",
+          "type": "rect",
+          "interactive": false,
+          "from": {
+            "data": "yScale"
+          },
+          "zindex": 0,
+          "encode": {
+            "update": {
+              "x": {
+                "value": 0
+              },
+              "x2": {
+                "signal": "ganttWidth"
+              },
+              "y": {
+                "signal": "scale('y', datum.id)"
+              },
+              "height": {
+                "signal": "bandwidth('y')"
+              },
+              "fill": {
+                "value": "#EAF3FF"
+              },
+              "opacity": {
+                "signal": "datum.id == itemHovered.id ? 0.48 : 0"
+              }
+            }
+          }
+        },
+        {
+          "name": "completionLabelSizes",
+          "type": "text",
+          "from": {
+            "data": "tasks"
+          },
+          "encode": {
+            "enter": {
+              "fill": {
+                "value": "transparent"
+              },
+              "text": {
+                "signal": "datum.completionLabel"
+              }
+            }
+          }
+        },
+        {
+          "name": "taskLabels",
+          "description": "Task, milestone and phase names",
+          "from": {
+            "data": "yScale"
+          },
+          "type": "text",
+          "encode": {
+            "update": {
+              "x": {
+                "scale": "x",
+                "field": "end"
+              },
+              "align": {
+                "signal": "'left'"
+              },
+              "dx": {
+                "signal": "datum.milestone?sqrt(milestoneSymbolSize)/2 - dayBandwidth/2 + 6:6"
+              },
+              "y": {
+                "signal": "datum.phase == datum.task?scale('y', datum.id)-2:scale('y', datum.id)"
+              },
+              "dy": {
+                "signal": "bandwidth('y')/2"
+              },
+              "fill": {
+                "signal": "datum.id == itemHovered.id ? '#101828' : (datum.isProject ? '#1F4E79' : datum.phase == datum.task ? '#344054' : '#475467')"
+              },
+              "text": {
+                "signal": "datum.task + ' (' + datum.days + ' d)'"
+              },
+              "fontWeight": {
+                "signal": "datum.id == itemHovered.id ? '700' : (datum.isProject ? '700' : datum.phase == datum.task ? '600' : '400')"
+              },
+              "font": {
+                "value": "Segoe UI"
+              },
+              "fontSize": {
+                "value": 10
+              },
+              "limit": {
+                "value": 220
+              },
+              "ellipsis": {
+                "value": "…"
+              },
+              "tooltip": {
+                "signal": "showTooltips && down==null ? {'Elemento':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Avance':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No'} : null"
+              }
+            }
+          }
+        },
+        {
+          "type": "group",
+          "from": {
+            "facet": {
+              "name": "dependencyLinesFacet",
+              "data": "dependencyLines",
+              "groupby": [
+                "id",
+                "sourceId"
+              ]
+            }
+          },
+          "marks": [
+            {
+              "type": "line",
+              "from": {
+                "data": "dependencyLinesFacet"
+              },
+              "encode": {
+                "enter": {
+                  "x": {
+                    "signal": "datum.value[0]"
+                  },
+                  "y": {
+                    "signal": "datum.value[1]"
+                  },
+                  "stroke": {
+                    "value": "#98A2B3"
+                  },
+                  "strokeWidth": {
+                    "value": 1.1
+                  },
+                  "interpolate": {
+                    "value": "linear"
+                  },
+                  "strokeJoin": {
+                    "value": "bevel"
+                  },
+                  "strokeCap": {
+                    "value": "round"
+                  },
+                  "defined": {
+                    "value": true
+                  }
+                },
+                "update": {
+                  "stroke": {
+                    "signal": "datum.id == itemHovered.id ? '#667085' : '#98A2B3'"
+                  },
+                  "strokeWidth": {
+                    "signal": "datum.id == itemHovered.id ? 1.5 : 1.1"
+                  },
+                  "zindex": {
+                    "value": 70
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "todayRule",
+          "description": "Today rule",
+          "type": "rule",
+          "data": [
+            {}
+          ],
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "scale('x',today+oneDay/2) "
+              },
+              "y2": {
+                "signal": "min(height, scaledHeight)"
+              },
+              "strokeWidth": {
+                "value": 1
+              },
+              "stroke": {
+                "value": "#2F74B5"
+              },
+              "strokeDash": {
+                "value": [
+                  2,
+                  2
+                ]
+              },
+              "opacity": {
+                "value": 0.75
+              }
+            }
+          }
+        },
+        {
+          "name": "todayText",
+          "description": "Today text",
+          "type": "text",
+          "data": [
+            {}
+          ],
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "scale('x',today+oneDay/2)"
+              },
+              "fill": {
+                "value": "#2F74B5"
+              },
+              "text": {
+                "value": "Hoy"
+              },
+              "angle": {
+                "value": 270
+              },
+              "baseline": {
+                "value": "top"
+              },
+              "dx": {
+                "value": -10
+              },
+              "dy": {
+                "value": 4
+              },
+              "opacity": {
+                "value": 0.75
+              },
+              "y": {
+                "signal": "height * 0.66"
+              },
+              "align": {
+                "value": "center"
+              },
+              "fontSize": {
+                "value": 9.5
+              },
+              "fontWeight": {
+                "value": "600"
+              },
+              "font": {
+                "value": "Segoe UI"
+              }
+            }
+          }
+        },
+        {
+          "name": "taskBars",
+          "description": "The task bars (serve as an outline for percent complete)",
+          "type": "group",
+          "from": {
+            "data": "tasks"
+          },
+          "encode": {
+            "update": {
+              "clip": {
+                "signal": "true"
+              },
+              "x": {
+                "scale": "x",
+                "field": "start"
+              },
+              "x2": {
+                "scale": "x",
+                "field": "end"
+              },
+              "yc": {
+                "signal": "(scale('y',datum.id)+bandwidth('y')/2)"
+              },
+              "height": {
+                "signal": "bandwidth('y')-yPaddingInner*2"
+              },
+              "tooltip": {
+                "signal": "showTooltips && down==null ? {'Tipo':'Tarea','Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Prioridad':isValid(datum.status) && datum.status!='' ? datum.status : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No','Lectura':datum.isCritical ? 'Riesgo directo sobre la fecha objetivo.' : 'Controlar avance y desviación frente al plan.'} : null"
+              },
+              "fill": {
+                "signal": "datum.id == itemHovered.id || indexof(itemHovered.dependencies,datum.id)>-1 ? (datum.isCritical ? '#FECACA' : '#E6F0FB') : (datum.isCritical ? criticalTaskLight : nonCriticalTaskLight)"
+              },
+              "stroke": {
+                "signal": "datum.isCritical ? criticalTaskColor : nonCriticalTaskColor"
+              },
+              "cornerRadius": {
+                "value": 4
+              },
+              "zindex": {
+                "value": 101
+              },
+              "strokeWidth": {
+                "signal": "datum.id == itemHovered.id ? 1.8 : 1.1"
+              },
+              "href": {
+                "field": "hyperlink"
+              },
+              "cursor": {
+                "value": "default"
+              }
+            }
+          },
+          "transform": [
+            {
+              "type": "lookup",
+              "from": "completionLabelSizes",
+              "key": "datum.id",
+              "fields": [
+                "datum.id"
+              ],
+              "values": [
+                "bounds.x1",
+                "bounds.x2"
+              ],
+              "as": [
+                "a",
+                "b"
+              ]
+            }
+          ],
+          "marks": [
+            {
+              "name": "taskFills",
+              "description": "Percent complete for each task",
+              "type": "rect",
+              "interactive": false,
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "0"
+                  },
+                  "y": {
+                    "signal": "0"
+                  },
+                  "height": {
+                    "signal": "item.mark.group.height"
+                  },
+                  "width": {
+                    "signal": "(item.mark.group.width/100)* item.mark.group.datum.completion"
+                  },
+                  "fill": {
+                    "signal": "item.mark.group.datum.isCritical ? criticalTaskColor : nonCriticalTaskColor"
+                  },
+                  "strokeWidth": {
+                    "value": 0
+                  },
+                  "cornerRadiusBottomLeft": {
+                    "value": 5
+                  },
+                  "cornerRadiusTopLeft": {
+                    "value": 5
+                  },
+                  "cornerRadius": {
+                    "value": 4
+                  },
+                  "fillOpacity": {
+                    "value": 0.95
+                  }
+                }
+              }
+            },
+            {
+              "name": "completeText",
+              "description": "Completion Text",
+              "type": "text",
+              "interactive": false,
+              "encode": {
+                "update": {
+                  "x": {
+                    "signal": "(item.mark.group.width/100)* parent.completion"
+                  },
+                  "align": {
+                    "signal": "'right'"
+                  },
+                  "dx": {
+                    "signal": "-2"
+                  },
+                  "baseline": {
+                    "value": "middle"
+                  },
+                  "y": {
+                    "signal": "item.mark.group.height/2+1"
+                  },
+                  "text": {
+                    "signal": "round(((item.mark.group.width/100)* parent.completion))>=(item.mark.group.b+4) && parent.completion>0?parent.completionLabel:''"
+                  },
+                  "fill": {
+                    "value": "#FFFFFF"
+                  },
+                  "font": {
+                    "value": "Segoe UI"
+                  },
+                  "fontSize": {
+                    "value": 8.5
+                  },
+                  "fontWeight": {
+                    "value": "700"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "phaseOutline",
+          "description": "The phase bar outlines",
+          "type": "path",
+          "from": {
+            "data": "phasePaths"
+          },
+          "encode": {
+            "update": {
+              "path": {
+                "signal": "datum.phasePath"
+              },
+              "fill": {
+                "signal": "datum.id == itemHovered.id || indexof(itemHovered.dependencies,datum.id)>-1 ? '#E9EEF5' : (datum.isProject ? projectFillColor : groupFillColor)"
+              },
+              "stroke": {
+                "signal": "datum.isProject ? '#8D98A7' : groupStrokeColor"
+              },
+              "strokeWidth": {
+                "signal": "datum.id == itemHovered.id ? 1.35 : datum.isProject ? 1.15 : 1.0"
+              },
+              "tooltip": {
+                "signal": "showTooltips && down==null ? (datum.isProject ? {'Tipo':'Proyecto','Proyecto':datum.task,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance':datum.completion + '%','Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Críticas':length(data('criticalTaskStats')) ? data('criticalTaskStats')[0].count : 0,'No críticas':length(data('nonCriticalTaskStats')) ? data('nonCriticalTaskStats')[0].count : 0,'Lectura':'Resumen ejecutivo del proyecto.'} : {'Tipo':'Fase','Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance':datum.completion + '%','Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Lectura':'Revisar tareas hijas, secuencia y restricciones.'}) : null"
+              },
+              "cursor": {
+                "value": "pointer"
+              },
+              "opacity": {
+                "signal": "datum.isProject ? 0.98 : 0.96"
+              }
+            }
+          }
+        },
+        {
+          "name": "phaseGroup",
+          "description": "Group to hold the x y coordinates for the SVG clipping fills",
+          "type": "group",
+          "clip": true,
+          "from": {
+            "data": "phasePaths"
+          },
+          "encode": {
+            "update": {
+              "strokeWidth": {
+                "value": 0
+              },
+              "stroke": {
+                "value": "red"
+              },
+              "x": {
+                "scale": "x",
+                "field": "start",
+                "offset": 0
+              },
+              "x2": {
+                "scale": "x",
+                "field": "end",
+                "offset": 0
+              },
+              "yc": {
+                "signal": "scale('y',datum.id)+bandwidth('y')/2"
+              },
+              "height": {
+                "signal": "bandwidth('y')-yPaddingInner*2"
+              }
+            }
+          },
+          "marks": [
+            {
+              "name": "phaseFills",
+              "description": "Percent complete for each phase. Clipping path signal has to be here as it fails to update on zoom when coming from a dataset. The only value available in the clipping path signal is parent!",
+              "type": "rect",
+              "interactive": false,
+              "clip": {
+                "path": {
+                  "signal": "'M 0 0'  + ' L ' +   (scale('x', parent.end) - scale('x', parent.start)) +' 0'    + ' v ' +  phaseSymbolHeight + ' L ' + (scale('x', parent.end) - scale('x', parent.start) - phaseSymbolWidth) +' '  +   (phaseSymbolHeight/2) + ' H ' +  phaseSymbolWidth + ' L 0 '   +   phaseSymbolHeight + ' z'"
+                }
+              },
+              "encode": {
+                "update": {
+                  "height": {
+                    "signal": "phaseSymbolHeight"
+                  },
+                  "width": {
+                    "signal": "(item.mark.group.width/100)* item.mark.group.datum.completion"
+                  },
+                  "fill": {
+                    "signal": "item.mark.group.datum.isProject ? '#B7BDC5' : '#C7CCD3'"
+                  },
+                  "strokeWidth": {
+                    "value": 0
+                  },
+                  "stroke": {
+                    "value": "red"
+                  },
+                  "fillOpacity": {
+                    "signal": "item.mark.group.datum.isProject ? 0.42 : 0.36"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "milestoneHalo",
+          "type": "symbol",
+          "from": {
+            "data": "milestones"
+          },
+          "encode": {
+            "update": {
+              "shape": {
+                "value": "diamond"
+              },
+              "x": {
+                "signal": "scale('x', datum.end) - (dayBandwidth/2)"
+              },
+              "yc": {
+                "signal": "scale('y', datum.id)+bandwidth('y')/2"
+              },
+              "size": {
+                "value": 300
+              },
+              "fill": {
+                "value": "#FFFFFF"
+              },
+              "opacity": {
+                "signal": "datum.id == itemHovered.id ? 0.95 : 0.70"
+              },
+              "stroke": {
+                "value": "#D0D5DD"
+              },
+              "strokeWidth": {
+                "value": 1.2
+              },
+              "zindex": {
+                "value": 115
+              }
+            }
+          }
+        },
+        {
+          "name": "milestoneSymbols",
+          "description": "Milestones",
+          "type": "symbol",
+          "from": {
+            "data": "milestones"
+          },
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "scale('x',datum.start)+dayBandwidth/2"
+              },
+              "y": {
+                "signal": "scale('y', datum.id)+bandwidth('y')/2"
+              },
+              "size": {
+                "value": 240
+              },
+              "shape": {
+                "value": "diamond"
+              },
+              "fill": {
+                "signal": "datum.id == itemHovered.id ? '#FFFFFF' : '#FFFFFF'"
+              },
+              "stroke": {
+                "value": "#1F4E79"
+              },
+              "strokeWidth": {
+                "signal": "datum.id == itemHovered.id ? 2.4 : 1.8"
+              },
+              "tooltip": {
+                "signal": "showTooltips && down==null ? {'Tipo':'Hito','Hito':datum.task,'Fase':datum.phase,'Fecha':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Estado':isValid(datum.state) ? datum.state : 'N/D','Prioridad':isValid(datum.status) && datum.status!='' ? datum.status : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No','Lectura':'Punto de control para validar entregables o decisiones.'} : null"
+              },
+              "opacity": {
+                "value": 1
+              },
+              "cursor": {
+                "value": "default"
+              },
+              "zindex": {
+                "value": 120
+              }
+            }
+          }
+        },
+        {
+          "name": "taskDependencyArrowsymbol",
+          "description": "Dependency arrows",
+          "type": "symbol",
+          "from": {
+            "data": "dependencyArrows"
+          },
+          "encode": {
+            "update": {
+              "shape": {
+                "value": "triangle-right"
+              },
+              "x": {
+                "signal": "scale('x',datum.start)",
+                "offset": {
+                  "signal": "datum.milestone!=null && datum.milestone != false? -(sqrt(arrowSymbolSize))/2 + dayBandwidth/2 - (sqrt(milestoneSymbolSize))/2 +1:-(sqrt(arrowSymbolSize)/2) +1"
+                }
+              },
+              "y": {
+                "signal": "scale('y', datum.id)+bandwidth('y')/2"
+              },
+              "fill": {
+                "value": "#98A2B3"
+              },
+              "size": {
+                "signal": "arrowSymbolSize+18"
+              },
+              "stroke": {
+                "value": "#FFFFFF"
+              },
+              "strokeWidth": {
+                "value": 0.8
+              },
+              "zindex": {
+                "value": 75
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "phaseTooltipHitArea",
+      "type": "rect",
+      "from": {
+        "data": "summaryRows"
+      },
+      "clip": true,
+      "zindex": 500,
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth + scale('x', datum.start)"
+          },
+          "x2": {
+            "signal": "columnsWidth + scale('x', datum.end)"
+          },
+          "y": {
+            "signal": "scale('y',datum.id)+max(2,yPaddingInner-2)"
+          },
+          "height": {
+            "signal": "bandwidth('y')-max(4,yPaddingInner*1.4)"
+          },
+          "fill": {
+            "value": "#FFFFFF"
+          },
+          "fillOpacity": {
+            "value": 0.01
+          },
+          "stroke": {
+            "value": "transparent"
+          },
+          "tooltip": {
+            "signal": "showTooltips && down==null ? (datum.isProject ? {'Tipo':'Proyecto','Proyecto':datum.task,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance':datum.completion + '%','Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Críticas':length(data('criticalTaskStats')) ? data('criticalTaskStats')[0].count : 0,'No críticas':length(data('nonCriticalTaskStats')) ? data('nonCriticalTaskStats')[0].count : 0,'Lectura':'Resumen ejecutivo del proyecto.'} : {'Tipo':'Fase','Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance':datum.completion + '%','Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Lectura':'Revisar tareas hijas, secuencia y restricciones.'}) : null"
+          },
+          "cursor": {
+            "value": "default"
+          }
+        }
+      }
+    },
+    {
+      "name": "taskTooltipHitArea",
+      "type": "rect",
+      "from": {
+        "data": "tasks"
+      },
+      "clip": true,
+      "zindex": 501,
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth + scale('x', datum.start)"
+          },
+          "x2": {
+            "signal": "columnsWidth + scale('x', datum.end)"
+          },
+          "y": {
+            "signal": "scale('y',datum.id)+yPaddingInner"
+          },
+          "height": {
+            "signal": "bandwidth('y')-yPaddingInner*2"
+          },
+          "fill": {
+            "value": "#FFFFFF"
+          },
+          "fillOpacity": {
+            "value": 0.01
+          },
+          "stroke": {
+            "value": "transparent"
+          },
+          "tooltip": {
+            "signal": "showTooltips && down==null ? {'Tipo':'Tarea','Tarea':datum.task,'Fase':datum.phase,'Inicio':timeFormat(datum.start,'%d/%m/%Y'),'Fin':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Duración':datum.days + ' d','Avance real':datum.completionLabel,'Planificado':isValid(datum.plannedLabel) ? datum.plannedLabel : 'N/D','Desviación':isValid(datum.deviationLabel) ? datum.deviationLabel : 'N/D','Estado':isValid(datum.state) ? datum.state : 'N/D','Prioridad':isValid(datum.status) && datum.status!='' ? datum.status : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No','Lectura':datum.isCritical ? 'Riesgo directo sobre la fecha objetivo.' : 'Controlar avance y desviación frente al plan.'} : null"
+          },
+          "cursor": {
+            "value": "default"
+          }
+        }
+      }
+    },
+    {
+      "name": "milestoneTooltipHitArea",
+      "type": "symbol",
+      "from": {
+        "data": "milestones"
+      },
+      "clip": true,
+      "zindex": 502,
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth + scale('x',datum.start)+dayBandwidth/2"
+          },
+          "y": {
+            "signal": "scale('y', datum.id)+bandwidth('y')/2"
+          },
+          "size": {
+            "value": 620
+          },
+          "shape": {
+            "value": "diamond"
+          },
+          "fill": {
+            "value": "#FFFFFF"
+          },
+          "fillOpacity": {
+            "value": 0.01
+          },
+          "stroke": {
+            "value": "transparent"
+          },
+          "tooltip": {
+            "signal": "showTooltips && down==null ? {'Tipo':'Hito','Hito':datum.task,'Fase':datum.phase,'Fecha':timeFormat(datum.labelEnd,'%d/%m/%Y'),'Estado':isValid(datum.state) ? datum.state : 'N/D','Prioridad':isValid(datum.status) && datum.status!='' ? datum.status : 'N/D','Ruta crítica':datum.isCritical ? 'Sí' : 'No','Lectura':'Punto de control para validar entregables o decisiones.'} : null"
+          },
+          "cursor": {
+            "value": "default"
+          }
+        }
+      }
+    },
+    {
+      "name": "ganttLegend",
+      "type": "group",
+      "interactive": false,
+      "zindex": 600,
+      "encode": {
+        "update": {
+          "x": {
+            "signal": "columnsWidth + 10"
+          },
+          "y": {
+            "signal": "max(6, height - 58)"
+          },
+          "width": {
+            "value": 286
+          },
+          "height": {
+            "value": 38
+          },
+          "opacity": {
+            "value": 1
+          }
+        }
+      },
+      "marks": [
+        {
+          "type": "rect",
+          "encode": {
+            "update": {
+              "x": {
+                "value": -4
+              },
+              "y": {
+                "value": -2
+              },
+              "width": {
+                "value": 294
+              },
+              "height": {
+                "value": 40
+              },
+              "fill": {
+                "value": "#FFFFFF"
+              },
+              "fillOpacity": {
+                "value": 0.96
+              },
+              "stroke": {
+                "value": "#D0D5DD"
+              },
+              "strokeOpacity": {
+                "value": 0.65
+              },
+              "cornerRadius": {
+                "value": 7
+              }
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 8
+              },
+              "y": {
+                "value": 6
+              },
+              "width": {
+                "value": 10
+              },
+              "height": {
+                "value": 8
+              },
+              "fill": {
+                "signal": "criticalTaskColor"
+              },
+              "stroke": {
+                "signal": "criticalTaskColor"
+              },
+              "cornerRadius": {
+                "value": 2
+              }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 24
+              },
+              "y": {
+                "value": 10
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "text": {
+                "signal": "'Críticas: ' + (length(data('criticalTaskStats')) ? data('criticalTaskStats')[0].count : 0)"
+              },
+              "fill": {
+                "value": "#475467"
+              },
+              "font": {
+                "value": "Segoe UI"
+              },
+              "fontSize": {
+                "value": 9.5
+              },
+              "fontWeight": {
+                "value": "600"
+              }
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 142
+              },
+              "y": {
+                "value": 6
+              },
+              "width": {
+                "value": 10
+              },
+              "height": {
+                "value": 8
+              },
+              "fill": {
+                "signal": "nonCriticalTaskColor"
+              },
+              "stroke": {
+                "signal": "nonCriticalTaskColor"
+              },
+              "cornerRadius": {
+                "value": 2
+              }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 158
+              },
+              "y": {
+                "value": 10
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "text": {
+                "signal": "'No críticas: ' + (length(data('nonCriticalTaskStats')) ? data('nonCriticalTaskStats')[0].count : 0)"
+              },
+              "fill": {
+                "value": "#475467"
+              },
+              "font": {
+                "value": "Segoe UI"
+              },
+              "fontSize": {
+                "value": 9.5
+              },
+              "fontWeight": {
+                "value": "600"
+              }
+            }
+          }
+        },
+        {
+          "type": "rule",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 8
+              },
+              "x2": {
+                "value": 22
+              },
+              "y": {
+                "value": 27
+              },
+              "stroke": {
+                "signal": "plannedMarkerColor"
+              },
+              "strokeWidth": {
+                "value": 1.25
+              },
+              "strokeDash": {
+                "value": [
+                  2,
+                  2
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 24
+              },
+              "y": {
+                "value": 27
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "text": {
+                "value": "Planificado"
+              },
+              "fill": {
+                "value": "#475467"
+              },
+              "font": {
+                "value": "Segoe UI"
+              },
+              "fontSize": {
+                "value": 9.5
+              },
+              "fontWeight": {
+                "value": "600"
+              }
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 147
+              },
+              "y": {
+                "value": 27
+              },
+              "shape": {
+                "value": "circle"
+              },
+              "size": {
+                "value": 55
+              },
+              "fill": {
+                "value": "#B42318"
+              },
+              "stroke": {
+                "value": "#B42318"
+              }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "update": {
+              "x": {
+                "value": 158
+              },
+              "y": {
+                "value": 27
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "text": {
+                "signal": "'Críticas abiertas: ' + (length(data('openCriticalStats')) ? data('openCriticalStats')[0].count : 0)"
+              },
+              "fill": {
+                "value": "#B42318"
+              },
+              "font": {
+                "value": "Segoe UI"
+              },
+              "fontSize": {
+                "value": 9.5
+              },
+              "fontWeight": {
+                "value": "700"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "taskSelector",
+      "description": "Hidden rect to support phase expand and collapse",
+      "type": "rect",
+      "clip": true,
+      "zindex": 99,
+      "from": {
+        "data": "yScale"
+      },
+      "encode": {
+        "update": {
+          "x": {
+            "value": -15
+          },
+          "x2": {
+            "signal": "columnsWidth + ganttWidth"
+          },
+          "y": {
+            "signal": "scale('y', datum.id)"
+          },
+          "height": {
+            "signal": "bandwidth('y')"
+          },
+          "fill": {
+            "value": "transparent"
+          },
+          "cursor": {
+            "signal": "datum.phase == datum.task ? 'pointer' : 'default'"
+          },
+          "href": {
+            "field": "hyperlink"
+          }
+        }
+      }
+    },
+    {
+      "type": "group",
+      "name": "axisClipper",
+      "clip": true,
+      "encode": {
+        "update": {
+          "width": {
+            "signal": "columnsWidth"
+          },
+          "stroke": {
+            "value": "transparent"
+          },
+          "height": {
+            "signal": "height"
+          }
+        }
+      },
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "right",
+          "encode": {
+            "ticks": {
+              "update": {
+                "x2": {
+                  "signal": "-columnsWidth"
+                }
+              }
+            }
+          },
+          "tickColor": "#f1f1f1",
+          "labels": false,
+          "title": "",
+          "grid": false,
+          "ticks": true,
+          "bandPosition": {
+            "signal": "0"
+          }
+        }
+      ]
+    }
+  ],
+  "axes": [
+    {
+      "description": "Bottom date axis",
+      "ticks": true,
+      "labelPadding": -12,
+      "scale": "x",
+      "position": {
+        "signal": "columnsWidth"
+      },
+      "orient": "top",
+      "tickSize": 15,
+      "grid": false,
+      "zindex": 1,
+      "labelOverlap": false,
+      "formatType": "time",
+      "tickCount": {
+        "signal": "dayBandwidthRound>=minYearBandwidth?'day':'month'"
+      },
+      "encode": {
+        "ticks": {
+          "update": {
+            "strokeWidth": [
+              {
+                "test": "dayBandwidthRound>=minDayBandwidth",
+                "value": 1
+              },
+              {
+                "test": "dayBandwidthRound>=minMonthBandwidth && dayBandwidthRound<minDayBandwidth && date(datum.value) == 1",
+                "value": 1
+              },
+              {
+                "test": "dayBandwidthRound>=minYearBandwidth && dayBandwidthRound<minMonthBandwidth && date(datum.value) == 1",
+                "value": 1
+              },
+              {
+                "test": "dayBandwidthRound<minYearBandwidth && dayofyear(datum.value) == 1",
+                "value": 1
+              },
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        "labels": {
+          "update": {
+            "text": [
+              {
+                "test": "dayBandwidthRound>=minDayBandwidth",
+                "signal": "timeFormat(datum.value,'%d')"
+              },
+              {
+                "test": "dayBandwidthRound>=minMonthBandwidth && dayBandwidthRound<minDayBandwidth && date(datum.value) == 15",
+                "signal": "timeFormat(datum.value,'%B %y')"
+              },
+              {
+                "test": "dayBandwidthRound>=minYearBandwidth && dayBandwidthRound<minMonthBandwidth && date(datum.value) == 15",
+                "signal": "timeFormat(datum.value,'%b')"
+              },
+              {
+                "test": "dayBandwidthRound<minYearBandwidth && month(datum.value) == 6",
+                "signal": "timeFormat(datum.value,'%Y')"
+              },
+              {
+                "value": ""
+              }
+            ],
+            "dx": {
+              "signal": "dayBandwidthRound/2"
+            },
+            "fill": {
+              "value": "#667085"
+            },
+            "font": {
+              "value": "Segoe UI"
+            },
+            "fontSize": {
+              "value": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Top date axis",
+      "scale": "x",
+      "position": {
+        "signal": "columnsWidth"
+      },
+      "domain": false,
+      "orient": "top",
+      "offset": 0,
+      "tickSize": 22,
+      "labelBaseline": "middle",
+      "grid": false,
+      "zindex": 0,
+      "tickCount": {
+        "signal": "dayBandwidthRound>=minYearBandwidth?'day':'month'"
+      },
+      "encode": {
+        "ticks": {
+          "update": {
+            "strokeWidth": [
+              {
+                "test": "dayBandwidthRound>=minDayBandwidth && date(datum.value) == 1",
+                "value": 1
+              },
+              {
+                "test": "dayBandwidthRound>=minYearBandwidth && dayBandwidthRound<minDayBandwidth && dayofyear(datum.value) == 1",
+                "value": 1
+              },
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        "labels": {
+          "update": {
+            "text": [
+              {
+                "test": "dayBandwidthRound>=minDayBandwidth && date(datum.value) == 15",
+                "signal": "timeFormat(datum.value,'%B %y')"
+              },
+              {
+                "test": "dayBandwidthRound>=minYearBandwidth && dayBandwidthRound<minMonthBandwidth && month(datum.value) == 5 && date(datum.value) == 15",
+                "signal": "timeFormat(datum.value,'%Y')"
+              },
+              {
+                "value": ""
+              }
+            ],
+            "dx": {
+              "signal": "dayBandwidthRound/2"
+            },
+            "fill": {
+              "value": "#667085"
+            },
+            "font": {
+              "value": "Segoe UI"
+            },
+            "fontSize": {
+              "value": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Month grid lines",
+      "scale": "x",
+      "position": {
+        "signal": "columnsWidth"
+      },
+      "domain": false,
+      "orient": "top",
+      "labels": false,
+      "grid": true,
+      "tickSize": 0,
+      "zindex": 0,
+      "tickCount": {
+        "signal": " dayBandwidthRound>=minMonthBandwidth || dayBandwidthRound<=0.35?0:'month'"
+      },
+      "encode": {
+        "labels": {
+          "update": {
+            "fill": {
+              "value": "#667085"
+            },
+            "fontSize": {
+              "value": 10
+            },
+            "font": {
+              "value": "Segoe UI"
+            },
+            "fontWeight": {
+              "value": "400"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {
+        "signal": "xDom"
+      },
+      "range": {
+        "signal": "[0,ganttWidth]"
+      }
+    },
+    {
+      "name": "y",
+      "type": "band",
+      "domain": {
+        "fields": [
+          {
+            "data": "yScale",
+            "field": "id"
+          }
+        ],
+        "sort": {
+          "op": "min",
+          "field": "finalSort",
+          "order": "ascending"
+        }
+      },
+      "range": {
+        "signal": "yRange"
+      }
+    },
+    {
+      "name": "cDark",
+      "type": "ordinal",
+      "range": {
+        "signal": "colours.dark"
+      },
+      "domain": {
+        "data": "input",
+        "field": "phase"
+      }
+    },
+    {
+      "name": "cLight",
+      "type": "ordinal",
+      "range": {
+        "signal": "colours.light"
+      },
+      "domain": {
+        "data": "input",
+        "field": "phase"
+      }
+    },
+    {
+      "name": "statusText",
+      "type": "ordinal",
+      "range": {
+        "signal": "statusColumn.range"
+      },
+      "domain": {
+        "signal": "statusColumn.domain"
+      }
+    },
+    {
+      "name": "statusFont",
+      "type": "ordinal",
+      "range": [
+        "#8A6A18",
+        "#A55A18",
+        "#A04A3A",
+        "#B23B45"
+      ],
+      "domain": {
+        "signal": "statusColumn.domain"
+      }
+    },
+    {
+      "name": "statusBackground",
+      "type": "ordinal",
+      "range": [
+        "#F8EDC6",
+        "#FFE3C0",
+        "#FFD9CC",
+        "#FFD3D8"
+      ],
+      "domain": {
+        "signal": "statusColumn.domain"
+      }
+    },
+    {
+      "name": "stateFill",
+      "type": "ordinal",
+      "domain": [
+        "Crítico",
+        "Retrasado",
+        "En vigilancia",
+        "En ejecución",
+        "En progreso",
+        "No iniciado",
+        "Completado",
+        "Normal"
+      ],
+      "range": [
+        "#E6F1FF",
+        "#D9F2E6",
+        "#F1F3F5",
+        "#FFF1D6",
+        "#FFD3D8",
+        "#E6F1FF",
+        "#E9EEF5"
+      ]
+    },
+    {
+      "name": "stateStroke",
+      "type": "ordinal",
+      "domain": [
+        "Crítico",
+        "Retrasado",
+        "En vigilancia",
+        "En ejecución",
+        "En progreso",
+        "No iniciado",
+        "Completado",
+        "Normal"
+      ],
+      "range": [
+        "#CFE4FF",
+        "#BFE8D2",
+        "#E6E8EB",
+        "#FFE2A8",
+        "#FFC0C8",
+        "#CFE4FF",
+        "#D6DEE8"
+      ]
+    },
+    {
+      "name": "stateTextScale",
+      "type": "ordinal",
+      "domain": [
+        "Crítico",
+        "Retrasado",
+        "En vigilancia",
+        "En ejecución",
+        "En progreso",
+        "No iniciado",
+        "Completado",
+        "Normal"
+      ],
+      "range": [
+        "#2F70B7",
+        "#3C9B6B",
+        "#6B7280",
+        "#9A6700",
+        "#B23B45",
+        "#2F70B7",
+        "#667085"
+      ]
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": "transparent"
+    },
+    "style": {
+      "col": {
+        "font": "Segoe UI",
+        "fontSize": 10.5,
+        "fill": "#5F6B7A",
+        "baseline": "middle"
+      },
+      "cell": {
+        "stroke": "transparent"
+      }
+    },
+    "font": "Segoe UI",
+    "text": {
+      "font": "Segoe UI",
+      "fontSize": 10.5,
+      "baseline": "middle"
+    },
+    "axis": {
+      "labelFont": "Segoe UI",
+      "labelFontSize": 10,
+      "labelColor": "#667085"
+    },
+    "title": {
+      "font": "Segoe UI",
+      "fontSize": 11,
+      "fontWeight": "bold",
+      "color": "#44546A"
+    }
+  }
+}
