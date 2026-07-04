@@ -14,7 +14,7 @@ El spec actual es una base robusta en Vega v5 para Deneb. Contiene 64 signals, 1
 
 ## Riesgos Detectados
 
-- El dataset de ejemplo debe limpiarse: fechas como texto y caracteres con encoding roto.
+- El dataset `Datos_Gantt.xlsx` debe tratarse como fuente valida del `.pbix`; cualquier aparente diferencia de tipos o encoding observada fuera de Power BI debe validarse primero contra el modelo.
 - Hay muchos signals; conviene documentar solo los mas utiles para usuarios finales.
 - Campos opcionales como `estado`, `enlace`, `proyecto` y `predecesoras` deben manejarse con datos consistentes.
 - Si el usuario cambia nombres de columnas, los transforms pueden dejar el visual en blanco.
@@ -62,8 +62,9 @@ Cambios aplicados en la version optimizada:
 
 ## Recomendaciones Para Siguiente Iteracion
 
-1. Limpiar `Datos_Gantt.xlsx` antes de promover la version optimizada.
+1. Validar `Datos_Gantt.xlsx` dentro de Power BI antes de promover la version optimizada; no modificarlo si el `.pbix` lo consume correctamente.
 2. Probar `Gantt 1.1 Optimized Spec.json` en Deneb.
 3. Si funciona igual que 1.0, reemplazar el JSON principal en una release formal.
 4. Documentar una tabla corta de personalizacion para usuarios no tecnicos.
 5. Agregar una seccion de troubleshooting para visual en blanco.
+

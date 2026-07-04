@@ -120,10 +120,15 @@ Cada visual puede tener campos especificos, pero la estructura base recomendada 
 | [Plantilla de dataset](templates/dataset-schema.md) | Campos, tipos y validaciones recomendadas para datos de ejemplo. |
 | [Checklist de publicacion](templates/publish-checklist.md) | Control de calidad antes de publicar o promocionar un visual. |
 
+## Nota Sobre Archivos Excel Fuente
+
+Los archivos `.xlsx` incluidos en cada carpeta son fuentes asociadas a los reportes `.pbix`. Aunque una inspeccion externa pueda mostrar tipos, hojas o vistas diferentes, la referencia valida es el comportamiento dentro de Power BI y Power Query.
+
+No renombres columnas, no cambies tipos de datos y no reemplaces estos Excel sin validar primero el impacto en el `.pbix`. Si se necesita un dataset didactico adicional para publicar ejemplos independientes, conviene crearlo como copia nueva y no sustituir la fuente actual.
 ## Buenas Practicas
 
 - Mantener IDs unicos y estables.
-- Usar fechas reales, no fechas guardadas como texto.
+- Mantener los archivos Excel fuente alineados con el modelo Power BI; no modificar tipos o columnas si el `.pbix` ya depende de ellos.
 - Evitar nombres de columnas duplicados o inconsistentes.
 - Mantener valores de prioridad estandarizados.
 - Validar el JSON dentro de Deneb despues de cada ajuste.
@@ -153,6 +158,8 @@ Algunos visuales toman como base e inspiracion propuestas de la comunidad Deneb/
 ## Licencia
 
 Consulta el archivo [LICENSE](LICENSE) para conocer los terminos de uso del repositorio.
+
+
 
 
 

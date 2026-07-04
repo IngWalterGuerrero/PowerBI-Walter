@@ -16,8 +16,8 @@ El visual tiene una base fuerte para Project Controls: dependencias, fases colap
 
 ## Mejoras Prioridad Alta
 
-1. Corregir el dataset `Datos_Gantt.xlsx` para que `inicio` y `fin` sean fechas reales, no texto.
-2. Corregir caracteres con encoding roto en el Excel, por ejemplo textos como `Planificaci�n` o `mi�rcoles`.
+1. Validar `Datos_Gantt.xlsx` contra el modelo Power BI antes de cualquier cambio; si el `.pbix` lo usa correctamente, conservarlo intacto.
+2. Tratar cualquier aparente problema de encoding detectado por herramientas externas como hallazgo a validar en Power BI, no como error confirmado del archivo fuente.
 3. Documentar en el README los campos alternativos que el JSON reconoce: `planificado`, `avance_planificado` y `porc_planificado`.
 4. Agregar una seccion de validacion del dataset antes de pegar el JSON en Deneb.
 5. Incluir una captura en el README del visual para que el usuario vea el resultado esperado sin abrir Power BI.
@@ -46,16 +46,17 @@ El visual tiene una base fuerte para Project Controls: dependencias, fases colap
 
 ## Recomendaciones Para El Dataset
 
-- Convertir fechas a tipo fecha real en Excel.
-- Usar codificacion limpia con acentos correctos.
+- Conservar los tipos y formatos que Power BI ya interpreta correctamente; documentar transformaciones si existen en Power Query.
+- Validar visualmente acentos y caracteres dentro de Power BI antes de modificar el archivo fuente.
 - Agregar columnas `estado`, `proyecto` y `avance_planificado` si se quieren explotar todas las capacidades del spec.
 - Mantener `avance` en escala 0 a 100.
 - Usar IDs unicos y predecesoras existentes.
 
 ## Checklist De Siguiente Iteracion
 
-- [ ] Limpiar `Datos_Gantt.xlsx`.
-- [ ] Validar el visual en Deneb despues de limpiar datos.
+- [ ] Validar `Datos_Gantt.xlsx` en Power BI y conservarlo intacto si alimenta correctamente el `.pbix`.
+- [ ] Validar el visual en Deneb usando el Excel fuente actual.
 - [ ] Actualizar screenshot si cambia el resultado visual.
 - [ ] Documentar signals clave en README.
 - [ ] Preparar release `gantt-visual-1.1`.
+

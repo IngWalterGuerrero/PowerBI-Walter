@@ -15,7 +15,7 @@ El spec ejecutivo tiene una base mas amplia que el visual operativo: 73 signals,
 
 - El JSON original declara `https://vega.github.io/schema/vega/v1.json`.
 - La documentacion indicaba Vega v5, por lo que habia inconsistencia.
-- El dataset `Gantt_Demo_Table.xlsx` aparece vacio, lo que impide probar el visual de forma confiable.
+- `Gantt_Demo_Table.xlsx` puede parecer vacio en inspecciones externas, pero debe considerarse fuente valida si el `.pbix` lo consume correctamente; cualquier cambio requiere validacion en Power BI.
 - Si `ruta_critica`, `estado` o `avance_planificado` vienen nulos, puede perderse parte del valor ejecutivo.
 
 ## Version Optimizada Generada
@@ -62,8 +62,9 @@ Cambios aplicados en la version optimizada:
 
 ## Recomendaciones Para Siguiente Iteracion
 
-1. Reconstruir `Gantt_Demo_Table.xlsx` con datos reales y fechas tipadas.
+1. Validar `Gantt_Demo_Table.xlsx` dentro de Power BI; si se necesita una muestra independiente, crear una copia demo nueva sin reemplazar la fuente actual.
 2. Probar `Gantt Ejecutivo 1.1 Optimized Spec.json` en Deneb.
 3. Confirmar que el cambio de schema a Vega v5 no altera render ni interacciones.
 4. Si la prueba es correcta, promover la version optimizada como spec principal.
 5. Agregar validaciones al README para evitar visuales en blanco por datos incompletos.
+

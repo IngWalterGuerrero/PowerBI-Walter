@@ -295,7 +295,7 @@ Esta ficha resume la evaluacion del visual desde tres perfiles de uso.
 
 | Prioridad | Mejora | Impacto |
 |---|---|---|
-| Alta | Corregir fechas y encoding del dataset `Datos_Gantt.xlsx`. | Mejora reutilizacion y evita errores al cargar datos. |
+| Alta | Validar `Datos_Gantt.xlsx` contra el `.pbix` antes de cualquier cambio. | Protege la fuente real que alimenta Power BI. |
 | Alta | Documentar campos alternativos como `planificado`, `avance_planificado` y `porc_planificado`. | Reduce friccion para adaptar modelos existentes. |
 | Media | Separar signals por categoria: navegacion, columnas, colores y filas. | Facilita personalizacion del JSON. |
 | Media | Agregar ejemplos de valores validos para prioridad y estado. | Mejora calidad de datos. |
@@ -313,3 +313,4 @@ Se genero una variante conservadora para mantenimiento y validacion:
 - [JSON_AUDIT.md](JSON_AUDIT.md)
 
 La version optimizada conserva la logica visual original y mejora metadatos, descripcion, campos esperados y notas de compatibilidad. Antes de reemplazar el spec principal, debe validarse en Deneb con el dataset limpio.
+
