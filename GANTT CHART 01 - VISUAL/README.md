@@ -278,3 +278,38 @@ Especialista en:
 LinkedIn:
 
 https://www.linkedin.com/in/ing-walterguerrero
+
+---
+
+## Auditoria De Mejora Continua
+
+Esta ficha resume la evaluacion del visual desde tres perfiles de uso.
+
+| Perfil | Necesidad principal | Estado actual | Siguiente mejora recomendada |
+|---|---|---|---|
+| Ejecutivo | Ver avance, prioridades e hitos sin exceso de detalle. | Bueno | Crear una vista inicial mas compacta. |
+| Analista Power BI | Reutilizar y adaptar el JSON. | Bueno | Documentar aliases de campos y signals clave. |
+| Gerente de proyecto | Entender tareas, dependencias y responsables. | Bueno | Reforzar tooltips y estados operativos. |
+
+## Mejoras Priorizadas
+
+| Prioridad | Mejora | Impacto |
+|---|---|---|
+| Alta | Corregir fechas y encoding del dataset `Datos_Gantt.xlsx`. | Mejora reutilizacion y evita errores al cargar datos. |
+| Alta | Documentar campos alternativos como `planificado`, `avance_planificado` y `porc_planificado`. | Reduce friccion para adaptar modelos existentes. |
+| Media | Separar signals por categoria: navegacion, columnas, colores y filas. | Facilita personalizacion del JSON. |
+| Media | Agregar ejemplos de valores validos para prioridad y estado. | Mejora calidad de datos. |
+| Baja | Agregar troubleshooting de errores comunes en Deneb. | Ayuda a usuarios nuevos. |
+
+Consulta el detalle completo en [IMPROVEMENTS.md](IMPROVEMENTS.md).
+
+---
+
+## Version JSON Optimizada
+
+Se genero una variante conservadora para mantenimiento y validacion:
+
+- [Gantt 1.1 Optimized Spec.json](Gantt%201.1%20Optimized%20Spec.json)
+- [JSON_AUDIT.md](JSON_AUDIT.md)
+
+La version optimizada conserva la logica visual original y mejora metadatos, descripcion, campos esperados y notas de compatibilidad. Antes de reemplazar el spec principal, debe validarse en Deneb con el dataset limpio.

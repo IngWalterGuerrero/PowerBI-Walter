@@ -142,7 +142,7 @@ Estados dinámicos:
 
 - Power BI
 - Deneb
-- Vega v5
+- Vega (validar schema del JSON antes de publicar nueva version)
 - JSON Specification
 
 ---
@@ -283,3 +283,39 @@ Especialista en:
 # LinkedIn
 
 www.linkedin.com/in/ing-walterguerrero
+
+
+---
+
+## Auditoria De Mejora Continua
+
+Esta ficha resume la evaluacion del visual desde tres perfiles de uso.
+
+| Perfil | Necesidad principal | Estado actual | Siguiente mejora recomendada |
+|---|---|---|---|
+| Ejecutivo | Ver ruta critica, desviacion y prioridades rapidamente. | Bueno | Mantener vista compacta y reforzar indicadores criticos. |
+| Analista Power BI | Reutilizar el JSON con datos propios. | Requiere ajuste | Reconstruir dataset demo y validar schema Vega. |
+| Gerente de proyecto | Identificar tareas criticas y responsables. | Bueno | Mejorar tooltip con responsable, estado y desviacion. |
+
+## Mejoras Priorizadas
+
+| Prioridad | Mejora | Impacto |
+|---|---|---|
+| Alta | Reconstruir `Gantt_Demo_Table.xlsx`, actualmente sin datos detectables. | Permite probar el visual sin friccion. |
+| Alta | Validar schema del JSON, porque el archivo declara Vega v1 y la documentacion mencionaba Vega v5. | Evita incompatibilidades en Deneb. |
+| Alta | Alinear README, JSON y Excel con los mismos nombres de columnas. | Reduce errores de configuracion. |
+| Media | Agregar indicadores ejecutivos sugeridos: criticas abiertas, desviacion y proximos hitos. | Aumenta valor para comites. |
+| Baja | Crear version compacta para slides o presentaciones. | Mejora uso ejecutivo. |
+
+Consulta el detalle completo en [IMPROVEMENTS.md](IMPROVEMENTS.md).
+
+---
+
+## Version JSON Optimizada
+
+Se genero una variante conservadora para mantenimiento y validacion:
+
+- [Gantt Ejecutivo 1.1 Optimized Spec.json](Gantt%20Ejecutivo%201.1%20Optimized%20Spec.json)
+- [JSON_AUDIT.md](JSON_AUDIT.md)
+
+La version optimizada conserva la logica visual original, actualiza el schema a Vega v5 y agrega metadatos de compatibilidad. Antes de reemplazar el spec principal, debe validarse en Deneb con un dataset demo funcional.
